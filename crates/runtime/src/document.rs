@@ -330,3 +330,42 @@ fn blend_channel(channel: u8, alpha: f32) -> u8 {
 fn is_positive_finite(value: f64) -> bool {
     value.is_finite() && value > 0.0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{calibration_page_to_pdf, EffectivePaper, PdfDocument};
+    use printpdf::PdfParseOptions;
+
+    #[test]
+    fn calibration_pdf_preserves_requested_paper_dimensions() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("calibration.pdf");
+
+        for (width_mm, height_mm) in [(230.0, 140.0), (140.0, 230.0), (50.0, 50.0), (210.0, 297.0)]
+        {
+            let paper = EffectivePaper {
+                width_mm,
+                height_mm,
+            };
+            calibration_page_to_pdf(&paper, &path).unwrap();
+            let bytes = std::fs::read(&path).unwrap();
+            let doc =
+                PdfDocument::parse(&bytes, &PdfParseOptions::default(), &mut Vec::new()).unwrap();
+
+            assert_eq!(doc.pages.len(), 1);
+            let page = &doc.pages[0];
+            // SumatraPDF 用 MediaBox 选纸，必须保留实际宽高而不是只打印尺寸文字。
+            // printpdf 将 MediaBox 四舍五入为整数 pt，允许半个 pt 的序列化误差。
+            assert!(
+                (f64::from(page.media_box.width.0) - width_mm * 72.0 / 25.4).abs() < 0.51,
+                "width: {} pt for {width_mm} mm",
+                page.media_box.width.0
+            );
+            assert!(
+                (f64::from(page.media_box.height.0) - height_mm * 72.0 / 25.4).abs() < 0.51,
+                "height: {} pt for {height_mm} mm",
+                page.media_box.height.0
+            );
+        }
+    }
+}

@@ -1,7 +1,8 @@
 use super::{
-    common_label_papers, resolve_paper_for_print, submitted_at_rfc3339, sumatra_print_settings,
-    PaperInfo, PrintBackend, PrintError, PrintOptions, PrintResult, PrintSubmission,
-    PrintTrackingOutcome, PrinterInfo, RawPrintOptions,
+    submitted_at_rfc3339, sumatra_print_settings,
+    windows_buffer::{read_buffer, BufferRead},
+    windows_physical_paper_dimensions, PaperInfo, PrintBackend, PrintError, PrintOptions,
+    PrintResult, PrintSubmission, PrintTrackingOutcome, PrinterInfo, RawPrintOptions,
 };
 use serde::Deserialize;
 use std::{
@@ -12,8 +13,17 @@ use std::{
     ptr,
 };
 use windows_sys::Win32::Graphics::Printing::{
-    ClosePrinter, EndDocPrinter, EndPagePrinter, OpenPrinterW, StartDocPrinterW, StartPagePrinter,
-    WritePrinter, DOC_INFO_1W, PRINTER_HANDLE,
+    ClosePrinter, DocumentPropertiesW, EndDocPrinter, EndPagePrinter, EnumFormsW, GetPrinterW,
+    OpenPrinterW, StartDocPrinterW, StartPagePrinter, WritePrinter, DOC_INFO_1W, FORM_INFO_1W,
+    PRINTER_HANDLE, PRINTER_INFO_8W, PRINTER_INFO_9W,
+};
+use windows_sys::Win32::{
+    Foundation::{GetLastError, ERROR_INSUFFICIENT_BUFFER},
+    Graphics::Gdi::{
+        CreateICW, DeleteDC, GetDeviceCaps, DEVMODEW, DM_FORMNAME, DM_IN_BUFFER, DM_OUT_BUFFER,
+        DM_PAPERLENGTH, DM_PAPERSIZE, DM_PAPERWIDTH, LOGPIXELSX, LOGPIXELSY, PHYSICALHEIGHT,
+        PHYSICALWIDTH,
+    },
 };
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -64,18 +74,16 @@ impl PrintBackend for WindowsPrintBackend {
         parse_printers_json(&String::from_utf8_lossy(&output.stdout))
     }
 
-    /// 确认打印机存在后返回常见标签纸尺寸。
+    /// 读取可用纸型编号及当前驱动方向下已验证的物理毫米尺寸。
     fn list_papers(&self, printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
         ensure_printer_exists(self, printer_name)?;
-        Ok(common_label_papers())
+        read_driver_papers(printer_name)
     }
 
-    /// 使用明确的打印机和纸张设置把 PDF 发送给 SumatraPDF。
+    /// 按任务尺寸选择驱动纸型，使用明确的份数和内容方向发送 PDF。
     fn print_pdf(&self, path: &Path, options: &PrintOptions) -> PrintResult<PrintSubmission> {
-        ensure_printer_exists(self, &options.printer_name)?;
-        let paper = resolve_print_paper(self, options)?;
-
-        let settings = sumatra_print_settings(options.copies, &paper);
+        let papers = self.list_papers(&options.printer_name)?;
+        let settings = sumatra_print_settings(options.copies, &options.paper, &papers)?;
         let output = hidden_command(&self.sumatra_path)
             .arg("-silent")
             .arg("-print-to")
@@ -124,6 +132,243 @@ impl PrintBackend for WindowsPrintBackend {
                 .to_string(),
         }
     }
+}
+
+/// 安全枚举表单，再验证驱动编号在 SumatraPDF 等效配置下的物理尺寸。
+fn read_driver_papers(printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
+    let name = wide_null(printer_name);
+    let mut printer = PRINTER_HANDLE {
+        Value: ptr::null_mut(),
+    };
+    if unsafe { OpenPrinterW(name.as_ptr(), &mut printer, ptr::null()) } == 0 {
+        return Err(command_error("OpenPrinterW", last_os_error()));
+    }
+    let result = read_validated_papers(printer, &name);
+    unsafe { ClosePrinter(printer) };
+    result
+}
+
+/// 对已打开的打印机读取表单，保留用户默认设置用于纸型编号的等效验证。
+fn read_validated_papers(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Vec<PaperInfo>> {
+    let default_mode = read_default_devmode(printer, name)?;
+    let (forms, count) = read_buffer("EnumFormsW", |buffer| {
+        let mut needed = 0;
+        let mut count = 0;
+        let output = if buffer.is_empty() {
+            ptr::null_mut()
+        } else {
+            buffer.as_mut_ptr().cast()
+        };
+        let ok = unsafe {
+            EnumFormsW(
+                printer,
+                1,
+                output,
+                (buffer.len() * 8) as u32,
+                &mut needed,
+                &mut count,
+            )
+        };
+        buffer_read_result(ok, needed, count)
+    })?;
+    if count > forms.len() * 8 / std::mem::size_of::<FORM_INFO_1W>() {
+        return Err(command_error("EnumFormsW", "invalid form count".into()));
+    }
+    let mut papers = Vec::new();
+    for index in 0..count {
+        let form = unsafe { &*forms.as_ptr().cast::<FORM_INFO_1W>().add(index) };
+        if form.Size.cx <= 0 || form.Size.cy <= 0 || form.pName.is_null() {
+            continue;
+        }
+        let start = form.pName as usize;
+        let base = forms.as_ptr() as usize;
+        let end = base + forms.len() * 8;
+        if start < base || start >= end || !start.is_multiple_of(2) {
+            return Err(command_error("EnumFormsW", "invalid form name".into()));
+        }
+        let raw_name =
+            unsafe { std::slice::from_raw_parts(form.pName, ((end - start) / 2).min(32)) };
+        let Some(length) = raw_name.iter().position(|value| *value == 0) else {
+            continue;
+        };
+        let mut candidate = default_mode.clone();
+        let mode = unsafe { &mut *candidate.as_mut_ptr().cast::<DEVMODEW>() };
+        mode.dmFormName.fill(0);
+        mode.dmFormName[..length].copy_from_slice(&raw_name[..length]);
+        mode.dmFields &= !(DM_PAPERSIZE | DM_PAPERWIDTH | DM_PAPERLENGTH);
+        mode.dmFields |= DM_FORMNAME;
+        if !validate_devmode(printer, name, &mut candidate) {
+            continue;
+        }
+        let kind = unsafe {
+            (*candidate.as_ptr().cast::<DEVMODEW>())
+                .Anonymous1
+                .Anonymous1
+                .dmPaperSize
+        };
+        if kind <= 0
+            || papers
+                .iter()
+                .any(|paper: &PaperInfo| paper.id == kind.to_string())
+        {
+            continue;
+        }
+        // SumatraPDF 3.6.1 只覆盖默认 DEVMODE 的纸型编号，再交给驱动验证。
+        let mut effective = default_mode.clone();
+        let mode = unsafe { &mut *effective.as_mut_ptr().cast::<DEVMODEW>() };
+        mode.Anonymous1.Anonymous1.dmPaperSize = kind;
+        mode.dmFields |= DM_PAPERSIZE;
+        if !validate_devmode(printer, name, &mut effective) {
+            continue;
+        }
+        let Some((width_mm, height_mm)) = physical_paper_size(name, &effective) else {
+            continue;
+        };
+        let form_width = f64::from(form.Size.cx) / 1000.0;
+        let form_height = f64::from(form.Size.cy) / 1000.0;
+        let Some((width_mm, height_mm)) =
+            windows_physical_paper_dimensions(form_width, form_height, width_mm, height_mm)
+        else {
+            continue;
+        };
+        papers.push(PaperInfo {
+            id: kind.to_string(),
+            name: String::from_utf16_lossy(&raw_name[..length]),
+            width_mm,
+            height_mm,
+        });
+    }
+    Ok(papers)
+}
+
+/// 把带容量 Win32 查询的返回值转换为重试或失败结果。
+fn buffer_read_result(ok: i32, needed: u32, count: u32) -> BufferRead {
+    if ok != 0 {
+        BufferRead::Complete(count as usize)
+    } else if unsafe { GetLastError() } == ERROR_INSUFFICIENT_BUFFER {
+        BufferRead::Resize(needed as usize)
+    } else {
+        BufferRead::Failed(last_os_error())
+    }
+}
+
+/// 读取用户默认 DEVMODE，未设置用户配置时使用全局默认配置。
+fn read_default_devmode(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Vec<u64>> {
+    for level in [9, 8] {
+        let (buffer, _) = read_buffer("GetPrinterW", |buffer| {
+            let mut needed = 0;
+            let output = if buffer.is_empty() {
+                ptr::null_mut()
+            } else {
+                buffer.as_mut_ptr().cast()
+            };
+            let ok = unsafe {
+                GetPrinterW(
+                    printer,
+                    level,
+                    output,
+                    (buffer.len() * 8) as u32,
+                    &mut needed,
+                )
+            };
+            buffer_read_result(ok, needed, 1)
+        })?;
+        if buffer.len() * 8 < std::mem::size_of::<PRINTER_INFO_9W>() {
+            return Err(command_error(
+                "GetPrinterW",
+                "invalid printer configuration".into(),
+            ));
+        }
+        let source = unsafe {
+            if level == 9 {
+                (*buffer.as_ptr().cast::<PRINTER_INFO_9W>()).pDevMode
+            } else {
+                (*buffer.as_ptr().cast::<PRINTER_INFO_8W>()).pDevMode
+            }
+        };
+        if source.is_null() {
+            continue;
+        }
+        let start = source as usize;
+        let base = buffer.as_ptr() as usize;
+        let end = base + buffer.len() * 8;
+        if start < base || start + std::mem::size_of::<DEVMODEW>() > end {
+            return Err(command_error(
+                "GetPrinterW",
+                "invalid DEVMODE buffer".into(),
+            ));
+        }
+        let public_size = unsafe { usize::from((*source).dmSize) };
+        let length = public_size + unsafe { usize::from((*source).dmDriverExtra) };
+        if public_size < std::mem::size_of::<DEVMODEW>() || start + length > end {
+            return Err(command_error("GetPrinterW", "invalid DEVMODE size".into()));
+        }
+        // dmSize 和 dmDriverExtra 均为 WORD：完整 DEVMODE 最大为 2 * u16::MAX 字节。
+        // 保留该上界容量，DocumentProperties 合并时即使私有数据长度变化也不会越界。
+        let mut mode = vec![0_u64; (2 * usize::from(u16::MAX)).div_ceil(8)];
+        unsafe { ptr::copy_nonoverlapping(source.cast::<u8>(), mode.as_mut_ptr().cast(), length) };
+        // 与 SumatraPDF NewPrinter 一样，用驱动当前默认配置初始化完整 DEVMODE。
+        if unsafe {
+            DocumentPropertiesW(
+                ptr::null_mut(),
+                printer,
+                name.as_ptr(),
+                mode.as_mut_ptr().cast(),
+                ptr::null(),
+                DM_OUT_BUFFER,
+            )
+        } != 1
+        {
+            return Err(command_error("DocumentPropertiesW", last_os_error()));
+        }
+        return Ok(mode);
+    }
+    Err(command_error(
+        "GetPrinterW",
+        "printer has no default DEVMODE".into(),
+    ))
+}
+
+/// 在内存中让驱动验证完整 DEVMODE，不保存到打印机默认设置。
+fn validate_devmode(printer: PRINTER_HANDLE, name: &[u16], mode: &mut [u64]) -> bool {
+    let pointer = mode.as_mut_ptr().cast::<DEVMODEW>();
+    unsafe {
+        DocumentPropertiesW(
+            ptr::null_mut(),
+            printer,
+            name.as_ptr(),
+            pointer,
+            pointer,
+            DM_IN_BUFFER | DM_OUT_BUFFER,
+        ) == 1
+    }
+}
+
+/// 读取等效打印配置的物理页面毫米尺寸，不创建打印任务。
+fn physical_paper_size(name: &[u16], mode: &[u64]) -> Option<(f64, f64)> {
+    let dc = unsafe {
+        CreateICW(
+            ptr::null(),
+            name.as_ptr(),
+            ptr::null(),
+            mode.as_ptr().cast(),
+        )
+    };
+    if dc.is_null() {
+        return None;
+    }
+    let width = unsafe { GetDeviceCaps(dc, PHYSICALWIDTH as i32) };
+    let height = unsafe { GetDeviceCaps(dc, PHYSICALHEIGHT as i32) };
+    let dpi_x = unsafe { GetDeviceCaps(dc, LOGPIXELSX as i32) };
+    let dpi_y = unsafe { GetDeviceCaps(dc, LOGPIXELSY as i32) };
+    unsafe { DeleteDC(dc) };
+    if width <= 0 || height <= 0 || dpi_x <= 0 || dpi_y <= 0 {
+        return None;
+    }
+    Some((
+        f64::from(width) * 25.4 / f64::from(dpi_x),
+        f64::from(height) * 25.4 / f64::from(dpi_y),
+    ))
 }
 
 fn submit_raw_to_windows_printer(printer_name: &str, data: &[u8]) -> PrintResult<()> {
@@ -346,15 +591,6 @@ fn hidden_command(program: impl AsRef<OsStr>) -> Command {
     let mut command = Command::new(program);
     command.creation_flags(CREATE_NO_WINDOW);
     command
-}
-
-/// 根据后端可用纸张列表解析请求纸张。
-fn resolve_print_paper(
-    backend: &WindowsPrintBackend,
-    options: &PrintOptions,
-) -> PrintResult<PaperInfo> {
-    let papers = backend.list_papers(&options.printer_name)?;
-    Ok(resolve_paper_for_print(&papers, &options.paper))
 }
 
 /// 在当前可执行文件旁查找打包的 SumatraPDF，并提供 PATH 兜底。
