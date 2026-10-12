@@ -3,6 +3,8 @@ use async_trait::async_trait;
 use crate::{CommandError, CommandErrorKind, ProductKind};
 
 /// 由具体产品实现的桌面集成能力。
+// async-trait 0.1.89 为 Future 返回值生成 #[must_use]，触发 Rust 1.99 的重复属性检查。
+#[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait ProductCommandAdapter: Send + Sync {
     /// 返回当前可执行文件的产品类型。

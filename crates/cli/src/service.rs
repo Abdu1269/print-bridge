@@ -5,6 +5,8 @@ use async_trait::async_trait;
 use crate::{Command, CommandError, CommandErrorKind, CommandPolicy, CommandResult};
 
 /// 执行命令的在线或离线端口。
+// async-trait 0.1.89 为 Future 返回值生成 #[must_use]，触发 Rust 1.99 的重复属性检查。
+#[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait CommandExecutor: Send + Sync {
     async fn execute(&self, command: Command) -> Result<CommandResult, CommandError>;
