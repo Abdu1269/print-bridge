@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="apps/desktop/src-tauri/icons/icon.png" alt="PrintBridge 图标" width="96">
+  <img src="apps/desktop/src-tauri/icons/icon.png" alt="PrintBridge icon" width="96">
 </p>
 
 <h1 align="center">PrintBridge</h1>
 
 <div align="center">
 
-[网站](https://printbridge.pages.dev/zh-CN/) | [在线示例](https://printbridge.pages.dev/zh-CN/demo.html) | [下载](#安装) | [快速开始](#quick-start) | [技术文档](docs/printbridge-technical.md) | [JS SDK](https://github.com/vergil-lai/print-bridge-jssdk) | [English](./README_en.md)
+[Website](https://printbridge.pages.dev/) | [Live Demo](https://printbridge.pages.dev/demo.html) | [Download](#installation) | [Quick Start](#quick-start) | [Technical Documentation](docs/printbridge-technical_en.md) | [JS SDK](https://github.com/vergil-lai/print-bridge-jssdk) | [中文](./README.md)
 
 </div>
 
@@ -16,48 +16,48 @@
   <a href="https://github.com/vergil-lai/print-bridge/releases"><img src="https://img.shields.io/github/downloads/vergil-lai/print-bridge/total" alt="Downloads"></a>
 </p>
 
-PrintBridge 是一个运行在用户电脑上的本地打印代理程序。它让受信任的 Web 页面或远程业务服务器，把 PDF、图片、Office 文件和原始打印指令发送到本机打印队列，用于标签、面单、小票、报表等需要稳定静默打印的业务场景。
+PrintBridge is a local print agent that runs on the user's computer. It lets trusted web pages or remote business servers send PDF files, images, Office files, and raw printer commands to the local system print queue. It is designed for labels, shipping documents, receipts, reports, and other business scenarios that need reliable silent printing.
 
-它不替代打印机驱动，也不绕过系统打印队列。PrintBridge 负责接收任务、校验来源、下载或转换文件，并把任务提交给本机操作系统；真正的出纸仍由系统打印队列、打印机驱动和打印机完成。
+PrintBridge does not replace printer drivers and does not bypass the operating system print queue. It receives print tasks, validates the source, downloads or converts files when needed, and submits jobs to the local operating system. The actual output is still handled by the system print queue, printer driver, and printer hardware.
 
-## 核心能力
+## Features
 
-- 桌面端系统托盘常驻，默认隐藏主窗口
-- 支持 Windows、macOS、Linux。Linux headless
-- 本地 WebSocket 服务与进程内管理 IPC
-- 网站白名单（Origin 白名单），用于限制哪些 Web 页面可以连接本机服务，例如 `https://example.com`
-- IP 白名单，用于限制哪些客户端地址可以访问本机服务，支持单个 IP 和 CIDR 网段
-- 支持 PDF、PNG/JPEG 图片和 Office(.docx/.xlsx/.pptx) 文件
-- 支持 HTML 页面：`html` 使用 URL，`raw-html` 使用内联 HTML 文本
-- 支持原始打印指令 (Raw Commands)，原样提交 ESC/POS、TSPL、ZPL、EPL、PCL 等设备指令
-- 每个任务可指定打印机和纸张尺寸；不指定时使用设置里的默认值。
-- 串行打印队列，避免同一台打印机并发抢占
-- 远程任务轮询，适合工位、门店、仓库终端自动拉取打印任务
-- CLI 运维模式，可在不打开 GUI 时查看和修改本机配置
-- 打印机枚举、纸张枚举、配置持久化和最近任务日志
-- 配置可加密导出和导入，便于批量部署工位
-- Desktop 支持 Tauri 在线更新；Headless 支持通过 APT/RPM 软件仓库更新
+- Desktop runs in the system tray and hides the main window by default
+- Supports Windows, macOS, and Linux, including Linux headless
+- Local WebSocket service and process-local management IPC
+- Website allowlist (Origin allowlist) to control which web pages may connect, for example `https://example.com`
+- IP allowlist to control which client addresses may access the local service, with single IP and CIDR support
+- Supports PDF, PNG/JPEG images, and Office(.docx/.xlsx/.pptx) files
+- Supports HTML pages: `html` uses a URL and `raw-html` uses inline HTML text
+- Supports raw printer commands and submits ESC/POS, TSPL, ZPL, EPL, PCL, and similar device commands as-is
+- Allows each task to specify a printer; falls back to the configured default printer when omitted
+- Uses a serial print queue to avoid concurrent jobs competing for the same printer
+- Remote task polling for workstations, stores, and warehouse terminals
+- CLI operations mode for viewing and updating local configuration without opening the GUI
+- Printer discovery, paper discovery, persistent configuration, and recent task history
+- Encrypted configuration export/import for workstation rollout
+- Tauri online updates for Desktop; Headless updates are available through APT/RPM repositories
 
-## 适合场景
+## Use Cases
 
-- 仓库、门店、工位电脑常驻一个本地打印代理
-- Web ERP、WMS、OMS、收银系统需要直接下发本机打印
-- 标签、面单、小票、拣货单、发货单等需要减少人工选择打印机
-- 业务服务器集中生成任务，本机代理定时拉取并回报打印状态
+- Keep a local print agent running on warehouse, store, or workstation computers
+- Print directly from Web ERP, WMS, OMS, or POS systems
+- Reduce manual printer selection for labels, shipping documents, picking lists, and receipts
+- Let a business server create print tasks while local agents poll tasks and report status
 
 <a id="quick-start"></a>
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-1. 从 [Releases](https://github.com/vergil-lai/print-bridge/releases/latest) 下载并安装 PrintBridge，也可以选择下方的[平台安装方式](#安装)。
-2. 启动 PrintBridge，选择默认打印机和纸张，并把业务系统的 Origin 加入网站白名单。
-3. 在业务系统中安装 [`print-bridge-sdk`](https://github.com/vergil-lai/print-bridge-jssdk)：
+1. Download and install PrintBridge from [Releases](https://github.com/vergil-lai/print-bridge/releases/latest), or choose one of the [platform-specific installation methods](#installation) below.
+2. Start PrintBridge, select the default printer and paper size, and add your business system's Origin to the website allowlist.
+3. Install [`print-bridge-sdk`](https://github.com/vergil-lai/print-bridge-jssdk) in your business application:
 
 ```bash
 npm install print-bridge-sdk
 ```
 
-连接本机 Agent 并发送第一个 PDF 打印任务：
+Connect to the local Agent and submit your first PDF print job:
 
 ```ts
 import { PrintBridgeClient } from "print-bridge-sdk";
@@ -77,69 +77,69 @@ const accepted = await client.print({
 console.log(accepted.jobId, accepted.status);
 ```
 
-`print()` 返回 `queued` 只表示任务已经进入 PrintBridge 队列。下载、转换和提交系统打印队列等后续结果通过 `status` 事件返回。完整用法见 [JSSDK 文档](https://github.com/vergil-lai/print-bridge-jssdk#readme)。
+A `queued` response from `print()` only means that the job has entered the PrintBridge queue. Later download, conversion, and system-queue results are delivered through `status` events. See the [JSSDK documentation](https://github.com/vergil-lai/print-bridge-jssdk#readme) for the complete API.
 
-## 桌面版截图
+## Desktop Screenshots
 
 <p>
-  <img src="screenshots/1.png" alt="PrintBridge 默认打印机与纸张设置" width="49%">
-  <img src="screenshots/5.png" alt="PrintBridge 打印任务记录" width="49%">
+  <img src="screenshots/1.png" alt="PrintBridge default printer and paper settings" width="49%">
+  <img src="screenshots/5.png" alt="PrintBridge print task history" width="49%">
 </p>
 
 <details>
-<summary>查看更多截图</summary>
+<summary>View more screenshots</summary>
 
 <p>
-  <img src="screenshots/2.png" alt="PrintBridge 远程任务配置" width="49%">
-  <img src="screenshots/3.png" alt="PrintBridge 网站 Origin 白名单" width="49%">
+  <img src="screenshots/2.png" alt="PrintBridge remote task settings" width="49%">
+  <img src="screenshots/3.png" alt="PrintBridge website Origin allowlist" width="49%">
 </p>
 
 <p>
-  <img src="screenshots/4.png" alt="PrintBridge IP 白名单" width="49%">
-  <img src="screenshots/6.png" alt="PrintBridge 加密导出配置" width="49%">
+  <img src="screenshots/4.png" alt="PrintBridge IP allowlist" width="49%">
+  <img src="screenshots/6.png" alt="PrintBridge encrypted configuration export" width="49%">
 </p>
 
 </details>
 
-## 和传统 Web 打印控件的区别
+## Difference From Traditional Web Printing Controls
 
-PrintBridge 不是传统意义上的 Web 打印控件。[C-Lodop / Lodop](https://www.lodop.net/) 更擅长打印设计、套打、表格、条码和页面内容打印；PrintBridge 更关注开源本地打印代理、远程任务轮询、原始打印指令（Raw Commands）、CLI 运维和可私有化集成。
+PrintBridge is not a traditional Web printing control. Products such as [C-Lodop / Lodop](https://www.lodop.net/) are better suited for print design, form printing, tables, barcodes, and printing page content. PrintBridge focuses on being an open-source local print agent for remote task polling, raw printer commands, CLI operations, and private integration.
 
-如果业务系统已经生成好 PDF、图片、Office 文件或 ESC/POS、TSPL、ZPL、EPL、PCL 等设备指令，PrintBridge 会更像一个稳定、可审计、可改造的本机打印桥接层。
+If your business system already generates PDF files, images, Office files, or device commands such as ESC/POS, TSPL, ZPL, EPL, and PCL, PrintBridge acts as a stable, auditable, and customizable bridge to the local print queue.
 
-## 🛡️ 多层安全边界
+## Layered Security Boundaries
 
-- **Origin + IP 双重白名单**：限制未经授权的网站和客户端访问本机服务。
-- **配置加密导出**：将白名单、默认打印机等配置加密打包，便于批量部署多台终端。
-- **资源访问限制**：阻止打印资源访问本机及私网地址，降低 SSRF 风险。
+- **Origin and IP allowlists**: Restrict unauthorized websites and clients from accessing the local service.
+- **Encrypted configuration export**: Encrypt and package allowlists, the default printer, and other settings for rollout across multiple terminals.
+- **Resource access restrictions**: Block print resources from accessing local and private-network addresses to reduce SSRF risk.
 
-## 远程任务轮询
+## Remote Task Polling
 
-PrintBridge 可以作为工位、门店或仓库终端上的本地代理，定时从业务服务器拉取打印任务，并把执行状态回报给服务器。
+PrintBridge can run as a local agent on a workstation, store terminal, or warehouse computer. It periodically polls a business server for print tasks and reports execution status back to the server.
 
-这适合“系统产生任务，指定终端自动打印”的场景，例如生产标签、仓库面单、拣货单、收银小票等。
+This is useful when the business system creates tasks and expects a specific local terminal to print them automatically, such as production labels, shipping labels, picking lists, and receipts.
 
-## 原始打印指令
+## Raw Printer Commands
 
-PrintBridge 支持原始打印指令（Raw Commands）。业务系统可以自己生成 ESC/POS、TSPL、ZPL、EPL、PCL、PostScript 等设备指令，PrintBridge 只负责把 bytes 原样提交到系统打印队列。
+PrintBridge supports raw printer commands. Your business system can generate ESC/POS, TSPL, ZPL, EPL, PCL, PostScript, or other device commands, and PrintBridge will submit the bytes to the system print queue as-is.
 
-这适合标签机、小票机和工业打印设备。PrintBridge 不解析这些设备语言，也不负责生成标签、小票或 RFID 指令。
+This is useful for label printers, receipt printers, and industrial printing devices. PrintBridge does not parse these device languages and does not generate labels, receipts, or RFID commands for you.
 
-## Office 文件打印
+## Office File Printing
 
-PrintBridge 支持 DOCX、XLSX 和 PPTX 文件。Office 任务必须提供 HTTP(S) `file_url`；本机 Agent 下载文件并转换为 PDF 后，再进入打印流程。
+PrintBridge supports DOCX, XLSX, and PPTX files. Office jobs must provide an HTTP(S) `file_url`; the local Agent downloads the file, converts it to PDF, and then sends it through the printing flow.
 
-Office 文件打印依赖本机安装的转换软件：
+Office file printing requires locally installed conversion software:
 
-- Windows：DOCX、XLSX、PPTX 会按对应格式依次尝试 Microsoft Office、WPS Office、LibreOffice。仅当当前转换器未安装、COM 无法创建新的独立实例，或必要的自动化安全控制不可用时才回退；文档打开、转换、超时或 PDF 校验失败不会回退。
-- macOS/Linux：需要安装 LibreOffice，并确保系统能够调用 `soffice` 或 `libreoffice`。
-- WPS 转换必须能确认 PrintBridge 拥有一个新建进程；否则会尝试下一个转换器。若单组件 WPS 总是复用已有用户进程，可以尝试安装多组件模式。PrintBridge 不会关闭用户原有的 Office/WPS 进程。
+- Windows: DOCX, XLSX, and PPTX try the matching Microsoft Office, WPS Office, and LibreOffice application in that order. Fallback occurs only when a converter is not installed, COM cannot create a new independently owned instance, or required automation security controls are unavailable. Document-open, conversion, timeout, and PDF-validation failures do not fall back.
+- macOS/Linux: install LibreOffice and make `soffice` or `libreoffice` available to the system.
+- WPS conversion must prove that PrintBridge owns a newly created process; otherwise the next converter is tried. If a single-component WPS installation always reuses an existing user process, a multi-component installation can be tried. PrintBridge never closes an Office/WPS process that was already running for the user.
 
-PrintBridge 不内置 Office 转换器。缺少对应软件、转换失败或转换超过 120 秒时，该 Office 打印任务会失败。Windows 发生转换超时时，只会清理该任务启动的 Office 实例，不会关闭用户已经打开的 Word、Excel 或 PowerPoint。
+PrintBridge does not bundle an Office converter. The Office print job fails when the required software is unavailable, conversion fails, or conversion exceeds 120 seconds. When a Windows conversion times out, PrintBridge only cleans up the Office instance started for that task; it does not close Word, Excel, or PowerPoint sessions already opened by the user.
 
-## HTML 打印
+## HTML Printing
 
-`html` 用于打印公开 URL 指向的 HTML 页面，必须提供 HTTP(S) `file_url`；`raw-html` 用于直接打印内联 HTML，必须提供非空 `html`，且不能提供 `file_url`。两种 HTML 任务都支持 `wait_ms`（0 到 30000 毫秒）、`copies` 和 `paper`：
+`html` prints an HTML page at a public URL and requires an HTTP(S) `file_url`; `raw-html` prints inline HTML and requires a non-empty `html` field with no `file_url`. Both HTML task types support `wait_ms` (0 to 30000 milliseconds), `copies`, and `paper`:
 
 ```json
 {
@@ -165,46 +165,46 @@ PrintBridge 不内置 Office 转换器。缺少对应软件、转换失败或转
 }
 ```
 
-浏览器端 JSSDK 使用 camelCase 的 `fileUrl`、`waitMs`，只负责序列化任务；本机 Agent 负责渲染 HTML 为 PDF，再进入打印流程。HTML 页面及其加载的资源只允许访问公开 HTTP/HTTPS 地址；本机、私网和 `file:` 资源会被拒绝。
+The browser JSSDK uses camelCase `fileUrl` and `waitMs` and only serializes the task. The local Agent renders HTML to PDF before printing. HTML pages and their loaded resources may access only public HTTP/HTTPS addresses; local, private-network, and `file:` resources are rejected.
 
-HTML 渲染不内置浏览器，所有平台和运行模式都必须使用已安装的 Chromium 系浏览器；不提供原生 WebView fallback：
+HTML rendering does not bundle a browser. Every platform and runtime mode requires an installed Chromium-family browser; native WebView fallbacks are not provided:
 
-| 平台    | 浏览器渲染器             |
-| ------- | ------------------------ |
-| Windows | Edge → Chrome → Chromium |
-| macOS   | Chrome → Chromium        |
-| Linux   | Chrome → Chromium        |
+| Platform | Browser renderer         |
+| -------- | ------------------------ |
+| Windows  | Edge → Chrome → Chromium |
+| macOS    | Chrome → Chromium        |
+| Linux    | Chrome → Chromium        |
 
-GUI 和 systemd 托管的 Linux headless 产品都遵循此要求；没有可用浏览器时，HTML 任务会以 renderer-unavailable（`RendererUnavailable`）失败。
+Both the GUI and the systemd-managed Linux headless product follow this requirement. Without a usable browser, an HTML task fails with renderer-unavailable (`RendererUnavailable`).
 
-## 安装
+## Installation
 
-在 [Releases](https://github.com/vergil-lai/print-bridge/releases) 下载最新版本。
+Download the latest version from [Releases](https://github.com/vergil-lai/print-bridge/releases).
 
-| 产品     | 平台    | 架构                 | 安装包                      |
-| -------- | ------- | -------------------- | --------------------------- |
-| Desktop  | Windows | x86_64               | NSIS `.exe`、WiX `.msi`     |
-| Desktop  | macOS   | Intel、Apple Silicon | 对应架构的 macOS 安装包     |
-| Desktop  | Linux   | x86_64、ARM64        | `.deb`、`.rpm`、`.AppImage` |
-| Headless | Linux   | x86_64、ARM64        | `.deb`、`.rpm`              |
+| Product  | Platform | Architecture         | Package                               |
+| -------- | -------- | -------------------- | ------------------------------------- |
+| Desktop  | Windows  | x86_64               | NSIS `.exe`, WiX `.msi`               |
+| Desktop  | macOS    | Intel, Apple Silicon | Architecture-specific macOS installer |
+| Desktop  | Linux    | x86_64, ARM64        | `.deb`, `.rpm`, `.AppImage`           |
+| Headless | Linux    | x86_64, ARM64        | `.deb`, `.rpm`                        |
 
-### WinGet（Windows）
+### WinGet (Windows)
 
-在 PowerShell 中运行以下命令，安装最新桌面版：
+Run the following command in PowerShell to install the latest Desktop version:
 
 ```powershell
 winget install --id Vergil.PrintBridge --exact
 ```
 
-### PowerShell（Windows）
+### PowerShell (Windows)
 
-在 PowerShell 中运行以下命令，下载、校验并安装最新的 x64 版本：
+Run the following command in PowerShell to download, verify, and install the latest x64 version:
 
 ```powershell
 irm https://printbridge.pages.dev/install.ps1 | iex
 ```
 
-### Homebrew（macOS）
+### Homebrew (macOS)
 
 ```bash
 brew tap vergil-lai/tap
@@ -212,9 +212,9 @@ brew install --cask printbridge
 ```
 
 <details>
-<summary><strong>APT（Debian/Ubuntu）</strong></summary>
+<summary><strong>APT (Debian/Ubuntu)</strong></summary>
 
-首次安装时添加 PrintBridge 软件源和签名公钥：
+Add the PrintBridge repository and signing key before the first installation:
 
 ```bash
 sudo install -d -m 0755 /etc/apt/keyrings
@@ -234,26 +234,26 @@ EOF
 sudo apt update
 ```
 
-安装桌面版：
+Install the Desktop version:
 
 ```bash
 sudo apt install print-bridge
 ```
 
-无桌面环境请选择 Headless 服务端版本：
+For systems without a desktop environment, install the Headless server version:
 
 ```bash
 sudo apt install print-bridge-server
 ```
 
-仓库签名公钥指纹为 `7D9F6986BAD473CE95B1FDA55B1B363C885CD16D`。
+The repository signing key fingerprint is `7D9F6986BAD473CE95B1FDA55B1B363C885CD16D`.
 
 </details>
 
 <details>
-<summary><strong>RPM/DNF（Fedora/RHEL/Rocky Linux/AlmaLinux）</strong></summary>
+<summary><strong>RPM/DNF (Fedora/RHEL/Rocky Linux/AlmaLinux)</strong></summary>
 
-首次安装时添加 PrintBridge 软件源：
+Add the PrintBridge repository before the first installation:
 
 ```bash
 curl -fsSL https://printbridge.pages.dev/rpm/printbridge.repo \
@@ -262,32 +262,32 @@ curl -fsSL https://printbridge.pages.dev/rpm/printbridge.repo \
 sudo dnf makecache
 ```
 
-安装桌面版：
+Install the Desktop version:
 
 ```bash
 sudo dnf install print-bridge
 ```
 
-无桌面环境请选择 Headless 服务端版本：
+For systems without a desktop environment, install the Headless server version:
 
 ```bash
 sudo dnf install print-bridge-server
 ```
 
-首次刷新仓库时，DNF 会要求确认导入 PrintBridge GPG 公钥。公钥指纹同样为 `7D9F6986BAD473CE95B1FDA55B1B363C885CD16D`。
+When the repository is refreshed for the first time, DNF prompts you to import the PrintBridge GPG key. Its fingerprint is also `7D9F6986BAD473CE95B1FDA55B1B363C885CD16D`.
 
 </details>
 
 <details>
-<summary><strong>更新方式</strong></summary>
+<summary><strong>Updating</strong></summary>
 
-通过 Homebrew 安装时：
+For Homebrew installations:
 
 ```bash
 brew upgrade --cask printbridge
 ```
 
-通过 APT 仓库安装时，先刷新软件包索引，再根据已安装的版本选择一条升级命令：
+For APT repository installations, refresh the package index, then run the command for the installed product:
 
 ```bash
 sudo apt update
@@ -299,33 +299,33 @@ sudo apt install --only-upgrade print-bridge
 sudo apt install --only-upgrade print-bridge-server
 ```
 
-通过 RPM 仓库安装时：
+For RPM repository installations:
 
 ```bash
 sudo dnf upgrade --refresh
 ```
 
-通过 Releases 安装的 Desktop 版本可使用设置页中的内置更新功能。PrintBridge 不提供单独的 `print-bridge update` 命令。
+Desktop versions installed from Releases can use the built-in updater in Settings. PrintBridge does not provide a separate `print-bridge update` command.
 
 </details>
 
-Desktop 和 Headless 都安装同名的 `print-bridge` 命令，但属于互斥产品，不能在同一台机器上同时安装。Linux Headless 适合无桌面的服务器、树莓派、工控机和专用打印主机；安装 deb/rpm 后会自动创建 `printbridge` 系统用户并启用 systemd system service。
+Desktop and Headless both install the `print-bridge` command, but they are mutually exclusive products and cannot be installed on the same machine. Linux Headless is intended for servers without a desktop, Raspberry Pi devices, industrial computers, and dedicated print hosts. Installing its deb/rpm creates the `printbridge` system user and enables the systemd system service automatically.
 
-Desktop 的“设置”页会显示命令行工具状态：macOS 可授权创建 `/usr/local/bin/print-bridge`；Windows 可把包含独立 console CLI 的安装目录加入当前用户 `PATH`，操作后需要重新打开终端；Linux deb/rpm 已自动提供 `/usr/bin/print-bridge`，因此不显示管理按钮；AppImage 可创建 `~/.local/bin/print-bridge` 用户级链接，如果该目录不在 `PATH` 中，需由用户自行加入。
+The Desktop Settings tab shows command-line tool status: macOS can create `/usr/local/bin/print-bridge` after administrator authorization; Windows can add the directory containing the separate console CLI to the current user's `PATH`, after which the terminal must be reopened; Linux deb/rpm already provides `/usr/bin/print-bridge`, so no management buttons are shown; AppImage can create the user-level `~/.local/bin/print-bridge` link, and users must add that directory to `PATH` themselves when necessary.
 
-### Desktop 首次配置
+### Initial Desktop Configuration
 
-首次运行后，在 PrintBridge 设置界面完成：
+After first launch, configure PrintBridge in the settings UI:
 
-1. 选择默认打印机
-2. 选择或填写默认纸张
-3. 在“网站白名单”中加入业务系统的 Origin，例如 `https://example.com`
-4. 保留默认 IP 白名单 `127.0.0.1`；如需让局域网设备连接，再添加明确的 IP 或网段，例如 `192.168.1.10`、`192.168.1.0/24`
-5. 如果需要远程任务轮询，在“远程”选项卡填写任务 URL 并打开开关
+1. Select the default printer
+2. Select or enter the default paper size
+3. Add your business system Origin to the website allowlist, for example `https://example.com`
+4. Keep the default IP allowlist entry `127.0.0.1`; if LAN devices need to connect, add explicit IPs or CIDR ranges such as `192.168.1.10` or `192.168.1.0/24`
+5. If remote task polling is required, enter the task URL in the Remote tab and enable it
 
-### Headless 首次配置
+### Initial Headless Configuration
 
-Headless 没有设置界面，通过同一个 `print-bridge` CLI 完成配置和诊断。安装 deb/rpm 后先配置默认打印机、纸张、Origin 白名单和远程任务地址，再检查 systemd 服务状态：
+Headless has no settings UI. Use the same `print-bridge` CLI for configuration and diagnostics. After installing the deb/rpm, configure the default printer, paper, Origin allowlist, and remote task URL, then check the systemd service:
 
 ```bash
 print-bridge printer
@@ -337,11 +337,11 @@ print-bridge remote enable
 systemctl status print-bridge
 ```
 
-Headless 的 `print-bridge serve` 由 systemd 自动启动，正常安装后无需手工运行，也没有 `serve install/uninstall` 命令。
+The Headless `print-bridge serve` process is started automatically by systemd. A normal installation does not require running it manually, and there are no `serve install/uninstall` commands.
 
-## CLI 模式
+## CLI Mode
 
-PrintBridge 提供 `print-bridge` CLI，用于在不打开 GUI 的情况下完成基础运维和诊断：
+PrintBridge provides a `print-bridge` CLI for basic operations and diagnostics without opening the GUI:
 
 ```bash
 print-bridge printer
@@ -361,65 +361,65 @@ print-bridge task
 print-bridge doctor
 ```
 
-`config export/import` 支持加密配置迁移；导出时可用重复的 `--only` 选择字段。Desktop 额外支持 `autostart` 和 `app language`，Headless 固定使用英语并由 systemd 管理自启动。
+`config export/import` supports encrypted configuration transfer, and repeated `--only` options select export fields. Desktop additionally supports `autostart` and `app language`; Headless uses English and systemd-managed startup.
 
-GUI 安装包和 headless 安装包都提供同名的 `print-bridge` CLI，但不能同时安装。只有 Linux headless 包提供 `print-bridge serve`；安装 deb/rpm 后会自动创建 `printbridge` 系统用户并启用 systemd 服务，无需 `serve install/uninstall`。
+The GUI and headless packages both expose the same `print-bridge` CLI but cannot be installed together. Only the Linux headless package provides `print-bridge serve`; installing its deb/rpm creates the dedicated `printbridge` system user and enables the systemd service automatically. There are no `serve install/uninstall` commands.
 
-项目采用 Cargo workspace：`crates/core` 保存纯模型，`crates/runtime` 保存队列和平台运行时，`crates/cli` 保存统一功能命令；`apps/desktop` 是 Vue + Tauri GUI，`apps/server` 是 Linux headless 产品。桌面功能通过本地 IPC 调用同一个 `CommandService`，网络只暴露 `/ws`。
+The Cargo workspace separates pure models in `crates/core`, runtime workers and platform adapters in `crates/runtime`, and shared functional commands in `crates/cli`. `apps/desktop` contains the Vue + Tauri GUI and `apps/server` contains the Linux headless product. Desktop operations use local IPC and the network router exposes only `/ws`.
 
-CLI 直接读写与 GUI 相同的本机配置，并可查看本地任务历史。完整命令见 [技术说明](docs/printbridge-technical.md#cli-运维入口)。
+The CLI reads and writes the same local configuration as the GUI and can inspect local task history. See the [technical documentation](docs/printbridge-technical_en.md#cli-operations) for the full command list.
 
-## 接入方式
+## Integration
 
-浏览器页面接入请使用 [`print-bridge-sdk`](https://github.com/vergil-lai/print-bridge-jssdk)。SDK 会连接本机代理 的 WebSocket 服务，并封装打印、批量打印、心跳和任务状态事件。
+For browser-side integration, use [`print-bridge-sdk`](https://github.com/vergil-lai/print-bridge-jssdk). The SDK connects to the local agent through WebSocket and wraps printing, batch printing, heartbeat, and task status events.
 
-PrintBridge 也支持远程任务轮询模式：业务服务器维护待打印任务，本机代理定时拉取任务、提交到系统打印队列，并把 `accepted`、`success`、`failed` 状态上报回服务器。
+PrintBridge also supports remote task polling. A business server can maintain pending print tasks while the local agent periodically pulls tasks, submits them to the system print queue, and reports `accepted`, `success`, or `failed` back to the server.
 
-## 工作方式
+## How It Works
 
 ```text
-Web 页面 / 远程业务服务器
+Web page / remote business server
   |
-  | WebSocket 下发任务，或 HTTP 轮询远程任务
+  | WebSocket task submission, or HTTP remote task polling
   v
 PrintBridge
   |
-  | 校验来源、下载文件、转换格式、进入串行队列
+  | Validate source, download files, convert formats, enter serial queue
   v
-系统打印队列
+System print queue
   |
   v
-打印机驱动与打印机
+Printer driver and printer
 ```
 
-WebSocket 里的 `submitted`，以及远程状态上报里的 `success`，表示任务已经成功提交到系统打印队列，不代表打印机已经完成出纸。
+The WebSocket `submitted` status and remote `success` report mean that the job has been submitted to the system print queue. They do not mean that the printer has physically finished printing.
 
-## 安全边界
+## Security Boundary
 
-PrintBridge 运行在用户本机，能够访问本机打印机。部署时请至少做到：
+PrintBridge runs on the user's local computer and can access local printers. At minimum, deployments should follow these rules:
 
-- 只把可信业务系统加入网站白名单；这里校验的是浏览器页面的 Origin
-- 只把可信客户端 IP 或网段加入 IP 白名单；默认 `127.0.0.1` 不可删除
-- 即使本地服务监听局域网地址，也不要把服务端口暴露到不可信网络
-- 在业务系统侧控制谁能发起打印、能打印哪些文件
-- 不要把敏感文件 URL 暴露给不可信页面
+- Add only trusted business systems to the website allowlist; this validates the browser page Origin
+- Add only trusted client IPs or CIDR ranges to the IP allowlist; the default `127.0.0.1` entry cannot be removed
+- Even when the local service listens on LAN addresses, do not expose the service port to untrusted networks
+- Control who can create print tasks and which files can be printed on the business-system side
+- Do not expose sensitive file URLs to untrusted pages
 
-## 技术文档
+## Technical Documentation
 
-具体协议、API、配置格式、开发命令和平台细节请看：
+For protocol details, APIs, configuration format, development commands, and platform notes, see:
 
-- [技术说明](docs/printbridge-technical.md)
-- [远程任务服务器示例](examples/remote-task/README.md)
+- [Technical documentation](docs/printbridge-technical_en.md)
+- [Remote task server examples](examples/remote-task/README.md)
 - [JS SDK](https://github.com/vergil-lai/print-bridge-jssdk)
 
-## 支持与反馈
+## Support and Feedback
 
-如果 PrintBridge 帮到了你，欢迎给项目一个 Star ⭐️。
+If PrintBridge has helped you, consider giving the project a Star ⭐️.
 
-如果你在使用中遇到问题或有改进建议，欢迎提交 [Issue](https://github.com/vergil-lai/print-bridge/issues)。
+If you encounter a problem or have an improvement to suggest, feel free to open an [Issue](https://github.com/vergil-lai/print-bridge/issues).
 
 ## License
 
-[Apache License 2.0](./LICENSE)。
+[Apache License 2.0](./LICENSE).
 
-Windows 版本随包使用的 SumatraPDF 适用其自身许可证。详见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
+The Windows build bundles SumatraPDF, which is covered by its own license. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
