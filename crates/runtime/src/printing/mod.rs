@@ -10,7 +10,7 @@ mod windows;
 #[cfg(any(test, target_os = "windows"))]
 mod windows_buffer;
 
-/// 将像素测量值对应到表单的有序尺寸，保留纸张方向并容忍设备像素量化。
+/// Map pixel measurements to ordered form dimensions, preserving orientation and tolerating pixel quantization.
 #[cfg(any(test, target_os = "windows"))]
 pub(crate) fn windows_physical_paper_dimensions(
     form_width: f64,
@@ -34,7 +34,7 @@ pub(crate) fn windows_physical_paper_dimensions(
     }
 }
 
-/// 返回当前目标平台的打印后端。
+/// Return print backend for current target platform.
 pub fn default_backend() -> Box<dyn PrintBackend + Send + Sync> {
     #[cfg(target_os = "macos")]
     {
@@ -57,7 +57,7 @@ pub fn default_backend() -> Box<dyn PrintBackend + Send + Sync> {
     }
 }
 
-/// 使用显式 SumatraPDF 可执行文件路径创建 Windows 后端。
+/// Create Windows backend using explicit SumatraPDF executable path.
 #[cfg(target_os = "windows")]
 pub fn windows_backend(
     sumatra_path: impl Into<std::path::PathBuf>,
@@ -70,17 +70,17 @@ struct UnsupportedPrintBackend;
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 impl PrintBackend for UnsupportedPrintBackend {
-    /// 报告不支持的平台，而不是返回假的打印机。
+    /// Report unsupported platform instead of returning fake printers.
     fn list_printers(&self) -> PrintResult<Vec<PrinterInfo>> {
         Err(PrintError::UnsupportedPlatform)
     }
 
-    /// 报告不支持的平台，而不是返回假的纸张。
+    /// Report unsupported platform instead of returning fake papers.
     fn list_papers(&self, _printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
         Err(PrintError::UnsupportedPlatform)
     }
 
-    /// 报告不支持的平台，而不是静默忽略打印任务。
+    /// Report unsupported platform instead of silently ignoring print tasks.
     fn print_pdf(
         &self,
         _path: &std::path::Path,
@@ -89,13 +89,13 @@ impl PrintBackend for UnsupportedPrintBackend {
         Err(PrintError::UnsupportedPlatform)
     }
 
-    /// 报告不支持的平台，而不是静默忽略 raw 打印任务。
+    /// Report unsupported platform instead of silently ignoring raw print tasks.
     fn print_raw(&self, _data: &[u8], _options: &RawPrintOptions) -> PrintResult<PrintSubmission> {
         Err(PrintError::UnsupportedPlatform)
     }
 }
 
-/// 返回当前 UTC RFC3339 时间，用于记录平台提交时间。
+/// Return current UTC RFC3339 timestamp for recording platform submission time.
 #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
 pub(crate) fn submitted_at_rfc3339() -> String {
     time::OffsetDateTime::now_utc()
@@ -103,7 +103,7 @@ pub(crate) fn submitted_at_rfc3339() -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_string())
 }
 
-/// 后端无法枚举纸张时使用的内置常见标签纸尺寸。
+/// Built-in common label sizes used when backend cannot enumerate papers.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn common_label_papers() -> Vec<PaperInfo> {
     vec![
@@ -140,7 +140,7 @@ pub(crate) fn common_label_papers() -> Vec<PaperInfo> {
     ]
 }
 
-/// 返回 CUPS 介质 token；已有驱动 token 时保持原值。
+/// Return CUPS media token; keeps driver token unchanged if present.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
 pub(crate) fn cups_media_option(paper: &PaperInfo) -> String {
     if is_cups_media_token(&paper.id) {
@@ -150,7 +150,7 @@ pub(crate) fn cups_media_option(paper: &PaperInfo) -> String {
     }
 }
 
-/// 按任务尺寸匹配 Windows 驱动纸型，并构造 SumatraPDF 的份数、方向和选纸参数。
+/// Match Windows driver paper by dimensions, constructing SumatraPDF copies, orientation, and paper selection arguments.
 #[cfg(any(test, target_os = "windows"))]
 pub(crate) fn sumatra_print_settings(
     copies: u16,
@@ -181,7 +181,7 @@ pub(crate) fn sumatra_print_settings(
         "portrait"
     };
 
-    // paperkind 使用驱动编号，不依赖本地化纸型名称，也不让 PDF 首页覆盖任务选纸。
+    // paperkind uses driver ID, avoiding reliance on localized paper names and preventing first-page override.
     Ok(format!(
         "{}x,fit,{},paperkind={}",
         copies.max(1),
@@ -190,18 +190,18 @@ pub(crate) fn sumatra_print_settings(
     ))
 }
 
-/// 根据纸张尺寸构造自定义 CUPS 介质选项。
+/// Construct custom CUPS media option from paper dimensions.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
 pub(crate) fn custom_media_option(width_mm: f64, height_mm: f64) -> String {
     format!("Custom.{}x{}mm", format_mm(width_mm), format_mm(height_mm))
 }
 
-/// 根据毫米尺寸构造可读纸张名称。
+/// Construct readable paper name from millimeter dimensions.
 pub(crate) fn paper_name(width_mm: f64, height_mm: f64) -> String {
     format!("{} x {} mm", format_mm(width_mm), format_mm(height_mm))
 }
 
-/// 格式化毫米值，去掉不必要的小数尾零。
+/// Format millimeter value, stripping unnecessary trailing decimal zeroes.
 fn format_mm(value: f64) -> String {
     if value.fract().abs() < f64::EPSILON {
         format!("{value:.0}")
@@ -213,7 +213,7 @@ fn format_mm(value: f64) -> String {
     }
 }
 
-/// 查找尺寸与请求尺寸匹配的驱动纸张。
+/// Find driver paper matching requested dimensions.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
 pub(crate) fn find_matching_paper<'a>(
     papers: &'a [PaperInfo],
@@ -225,7 +225,7 @@ pub(crate) fn find_matching_paper<'a>(
     })
 }
 
-/// 有匹配的驱动纸张时使用它，否则保留自定义请求。
+/// Use matching driver paper if found; otherwise retain custom request.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
 pub(crate) fn resolve_paper_for_print(papers: &[PaperInfo], paper: &PaperInfo) -> PaperInfo {
     find_matching_paper(papers, paper)
@@ -233,7 +233,7 @@ pub(crate) fn resolve_paper_for_print(papers: &[PaperInfo], paper: &PaperInfo) -
         .unwrap_or_else(|| paper.clone())
 }
 
-/// 检测 CUPS 自定义介质 token。
+/// Detect CUPS custom media token.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
 fn is_cups_media_token(value: &str) -> bool {
     value.starts_with("Custom.")

@@ -11,7 +11,7 @@ use thiserror::Error;
 use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 use tokio_util::sync::CancellationToken;
 
-/// 单次远程任务拉取的处理结果。
+/// Processing outcome of a single remote task fetch.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PollOutcome {
     pub received: usize,
@@ -19,7 +19,7 @@ pub struct PollOutcome {
     pub duplicated: usize,
 }
 
-/// 单次远程状态回报的处理结果。
+/// Processing outcome of a single remote status report delivery.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ReportOutcome {
     pub delivered: usize,
@@ -27,7 +27,7 @@ pub struct ReportOutcome {
     pub abandoned: usize,
 }
 
-/// 远程 worker 拉取任务或回报状态时返回的错误。
+/// Errors returned by remote worker when fetching tasks or reporting status.
 #[derive(Debug, Error)]
 pub enum RemoteWorkerError {
     #[error(transparent)]
@@ -42,12 +42,12 @@ pub enum RemoteWorkerError {
     InvalidTask(String),
 }
 
-/// 运行远程任务轮询和状态回报后台循环。
+/// Run background loop for remote task polling and status reporting.
 pub async fn run_worker(state: AgentState) {
     run_worker_until(state, CancellationToken::new()).await;
 }
 
-/// 运行远程 worker，并在取消后停止下一轮轮询。
+/// Run remote worker, halting subsequent polling rounds upon cancellation.
 pub async fn run_worker_until(state: AgentState, shutdown: CancellationToken) {
     let client = RemoteClient::default();
 
@@ -83,7 +83,7 @@ pub async fn run_worker_until(state: AgentState, shutdown: CancellationToken) {
     }
 }
 
-/// 执行一次远程任务拉取并把新任务加入本地队列。
+/// Perform single remote task fetch and enqueue new tasks into local queue.
 pub async fn poll_once(
     state: &AgentState,
     client: &RemoteClient,
@@ -152,7 +152,7 @@ async fn validate_remote_job(
         .map_err(|error| RemoteWorkerError::InvalidTask(error.to_string()))
 }
 
-/// 执行一次待回报状态事件投递。
+/// Perform delivery of pending status reporting events.
 pub async fn report_pending_once(
     state: &AgentState,
     client: &RemoteClient,

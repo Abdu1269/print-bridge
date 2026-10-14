@@ -23,7 +23,7 @@ const MAX_CONVERTER_MESSAGE_CHARS: usize = 2_048;
 const TIMEOUT_CLEANUP_TIMEOUT: Duration = Duration::from_secs(5);
 const CONVERTER_EXIT_GRACE: Duration = Duration::from_secs(5);
 
-/// 可转换为 PDF 的 Office 文档格式。
+/// Office document formats convertible to PDF.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OfficeFormat {
     Docx,
@@ -32,7 +32,7 @@ pub enum OfficeFormat {
 }
 
 impl OfficeFormat {
-    /// 返回本机 Office 软件识别输入格式所需的扩展名。
+    /// Return the extension required for native Office software to identify the input format.
     fn extension(self) -> &'static str {
         match self {
             Self::Docx => "docx",
@@ -42,7 +42,7 @@ impl OfficeFormat {
     }
 }
 
-/// Office 文档检测或转换为 PDF 时返回的错误。
+/// Errors returned when detecting Office documents or converting them to PDF.
 #[derive(Debug, Error)]
 pub enum OfficeConvertError {
     #[error("unsupported office format")]
@@ -75,14 +75,14 @@ pub enum OfficeConvertError {
     InvalidPdf { converter: &'static str },
 }
 
-/// `doctor` 被动探测到的 Office 转换器状态。
+/// Office converter status passively probed by `doctor`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct OfficeCandidateStatus {
     pub name: &'static str,
     pub available: bool,
 }
 
-/// 把协议中的支持格式映射为 Office 转换格式。
+/// Map supported protocol format to Office conversion format.
 pub fn office_format_from_supported(format: SupportedFormat) -> Option<OfficeFormat> {
     match format {
         SupportedFormat::Docx => Some(OfficeFormat::Docx),
@@ -92,7 +92,7 @@ pub fn office_format_from_supported(format: SupportedFormat) -> Option<OfficeFor
     }
 }
 
-/// 根据 OOXML 容器内容检测 Office 文档格式。
+/// Detect Office document format from OOXML container contents.
 pub fn detect_office_format(path: &Path) -> Result<Option<OfficeFormat>, OfficeConvertError> {
     let file = fs::File::open(path)?;
     let mut archive = match ZipArchive::new(file) {
@@ -116,7 +116,7 @@ pub fn detect_office_format(path: &Path) -> Result<Option<OfficeFormat>, OfficeC
     Ok(None)
 }
 
-/// 把 Office 文档转换为 PDF 并写入指定路径。
+/// Convert Office document to PDF and write to specified path.
 pub async fn office_to_pdf(
     input_path: &Path,
     format: OfficeFormat,
@@ -133,7 +133,7 @@ pub async fn office_to_pdf(
     .await
 }
 
-/// 在隔离工作目录中执行一次可注入的 Office 转换。
+/// Execute an injectable Office conversion within an isolated working directory.
 async fn office_to_pdf_with_converter<F, Fut>(
     input_path: &Path,
     format: OfficeFormat,
@@ -185,7 +185,7 @@ where
     }
 }
 
-/// 生成与目标 PDF 同名且扩展名正确的暂存输入路径。
+/// Generate staged input path sharing target PDF basename with correct extension.
 fn staged_input_path(
     work_dir: &Path,
     output_path: &Path,
@@ -200,7 +200,7 @@ fn staged_input_path(
     Ok(work_dir.join(file_name))
 }
 
-/// 校验转换器输出存在、非空且具有 PDF 文件头。
+/// Verify converter output exists, is non-empty, and contains PDF header.
 pub(crate) fn validate_pdf(path: &Path, converter: &'static str) -> Result<(), OfficeConvertError> {
     let invalid = || OfficeConvertError::InvalidPdf { converter };
     let metadata = fs::metadata(path).map_err(|_| invalid())?;
@@ -217,7 +217,7 @@ pub(crate) fn validate_pdf(path: &Path, converter: &'static str) -> Result<(), O
     Ok(())
 }
 
-/// 返回指定格式在当前平台的被动转换器探测结果。
+/// Return passive converter detection result for specified format on current platform.
 pub(crate) fn office_candidate_statuses(format: OfficeFormat) -> Vec<OfficeCandidateStatus> {
     #[cfg(target_os = "windows")]
     {
@@ -238,7 +238,7 @@ pub(crate) fn office_candidate_statuses(format: OfficeFormat) -> Vec<OfficeCandi
     }
 }
 
-/// 删除文件，同时把不存在视为清理成功。
+/// Delete file, treating non-existence as successful cleanup.
 async fn remove_file_if_exists(path: &Path) -> io::Result<()> {
     match tokio::fs::remove_file(path).await {
         Ok(()) => Ok(()),
@@ -247,7 +247,7 @@ async fn remove_file_if_exists(path: &Path) -> io::Result<()> {
     }
 }
 
-/// 删除目录，同时把不存在视为清理成功。
+/// Delete directory, treating non-existence as successful cleanup.
 async fn remove_dir_if_exists(path: &Path) -> io::Result<()> {
     match tokio::fs::remove_dir_all(path).await {
         Ok(()) => Ok(()),
@@ -256,13 +256,13 @@ async fn remove_dir_if_exists(path: &Path) -> io::Result<()> {
     }
 }
 
-/// 把转换器错误限制为任务历史允许的固定字符数。
+/// Truncate converter error to fixed character limit allowed by task history.
 fn truncate_message(value: &str) -> String {
     value.chars().take(MAX_CONVERTER_MESSAGE_CHARS).collect()
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-/// 在 macOS/Linux 上调用本机 LibreOffice。
+/// Invoke native LibreOffice on macOS/Linux.
 async fn convert_with_current_backend(
     input_path: &Path,
     _format: OfficeFormat,
@@ -272,7 +272,7 @@ async fn convert_with_current_backend(
 }
 
 #[cfg(target_os = "windows")]
-/// 在 Windows 上调用本机 Microsoft Office。
+/// Invoke native Microsoft Office on Windows.
 async fn convert_with_current_backend(
     input_path: &Path,
     format: OfficeFormat,
@@ -282,7 +282,7 @@ async fn convert_with_current_backend(
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-/// 在非桌面平台报告 Office 转换器不可用。
+/// Report Office converter unavailable on non-desktop platforms.
 async fn convert_with_current_backend(
     _input_path: &Path,
     _format: OfficeFormat,
@@ -294,7 +294,7 @@ async fn convert_with_current_backend(
     })
 }
 
-/// 在固定时限内执行 Office 转换子进程。
+/// Execute Office conversion subprocess within fixed timeout.
 pub(crate) async fn execute_converter_command(
     command: Command,
     converter: &'static str,
@@ -304,7 +304,7 @@ pub(crate) async fn execute_converter_command(
 }
 
 #[cfg(any(target_os = "windows", test))]
-/// 在超时前运行一次实例专属清理命令后执行 Office 转换子进程。
+/// Run instance-specific cleanup command before timeout and execute Office conversion subprocess.
 pub(crate) async fn execute_converter_command_with_timeout_cleanup(
     command: Command,
     converter: &'static str,
@@ -320,7 +320,7 @@ pub(crate) async fn execute_converter_command_with_timeout_cleanup(
     .await
 }
 
-/// 在固定时限内执行 Office 转换子进程，并在超时后按需运行清理命令。
+/// Execute Office conversion subprocess within fixed timeout, running cleanup on demand after timeout.
 async fn execute_converter_command_with_optional_cleanup(
     mut command: Command,
     converter: &'static str,
@@ -398,7 +398,7 @@ async fn execute_converter_command_with_optional_cleanup(
     })
 }
 
-/// 把转换子进程输出压缩为可安全写入任务历史的错误。
+/// Compress conversion subprocess output into error safely writeable to task history.
 pub(crate) fn command_failed(converter: &'static str, output: &Output) -> OfficeConvertError {
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();

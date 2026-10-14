@@ -34,7 +34,7 @@ use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 const BIND_HOST: &str = "0.0.0.0";
 
-/// 绑定或启动本地服务时可能出现的错误。
+/// Errors that can occur when binding or starting the local service.
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error("server bind failed: {0}")]
@@ -43,7 +43,7 @@ pub enum ServerError {
     InvalidAddress(#[from] AddrParseError),
 }
 
-/// 构建只暴露 PrintBridge WebSocket 协议的网络路由。
+/// Construct network router exposing only the PrintBridge WebSocket protocol.
 pub fn router(state: AgentState) -> Router {
     Router::new()
         .route("/ws", get(ws_handler))
@@ -54,12 +54,12 @@ pub fn router(state: AgentState) -> Router {
         .with_state(state)
 }
 
-/// 解析服务绑定地址。Agent 固定监听所有网卡，供局域网客户端连接。
+/// Parse service bind address. Agent binds to all network interfaces for LAN client access.
 pub fn configured_addr(config: &AgentConfig) -> Result<SocketAddr, AddrParseError> {
     SocketAddr::from_str(&format!("{}:{}", BIND_HOST, config.service.port))
 }
 
-/// 在当前任务中运行本地服务。
+/// Run local service within current task.
 pub async fn bind_listener(config: &AgentConfig) -> Result<(SocketAddr, TcpListener), ServerError> {
     let addr = configured_addr(config)?;
     let listener = TcpListener::bind(addr).await?;
@@ -67,7 +67,7 @@ pub async fn bind_listener(config: &AgentConfig) -> Result<(SocketAddr, TcpListe
     Ok((addr, listener))
 }
 
-/// 使用已经绑定的监听器运行本地服务。
+/// Run local service using pre-bound listener.
 pub async fn serve_listener(state: AgentState, listener: TcpListener) -> Result<(), ServerError> {
     axum::serve(
         listener,
@@ -77,7 +77,7 @@ pub async fn serve_listener(state: AgentState, listener: TcpListener) -> Result<
     Ok(())
 }
 
-/// 使用已经绑定的监听器运行服务，收到取消信号后优雅停止。
+/// Run service using pre-bound listener, stopping gracefully upon cancellation signal.
 pub async fn serve_listener_until(
     state: AgentState,
     listener: TcpListener,
@@ -92,14 +92,14 @@ pub async fn serve_listener_until(
     Ok(())
 }
 
-/// 在当前任务中运行本地服务。
+/// Run local service within current task.
 pub async fn run_server(state: AgentState) -> Result<(), ServerError> {
     let config = state.config.read().await.clone();
     let (_, listener) = bind_listener(&config).await?;
     serve_listener(state, listener).await
 }
 
-/// 把允许的浏览器连接升级为 PrintBridge WebSocket 协议。
+/// Upgrade allowed browser connections to PrintBridge WebSocket protocol.
 async fn ws_handler(
     State(state): State<AgentState>,
     headers: HeaderMap,
@@ -116,19 +116,19 @@ async fn ws_handler(
     ws.on_upgrade(move |socket| handle_socket(state, socket, origin))
 }
 
-/// 检查 WebSocket 请求 Origin 是否被当前配置允许。
+/// Check whether WebSocket request Origin is allowed by current configuration.
 pub async fn is_ws_origin_allowed(state: &AgentState, origin: Option<&str>) -> bool {
     let config = state.config.read().await;
     is_allowed_origin(origin, &config.security.allowed_origins)
 }
 
-/// 检查客户端 IP 是否被当前配置允许。
+/// Check whether client IP is allowed by current configuration.
 pub async fn is_client_ip_allowed_for_state(state: &AgentState, client_ip: IpAddr) -> bool {
     let config = state.config.read().await;
     is_client_ip_allowed(client_ip, &config.security.allowed_ips)
 }
 
-/// 在所有 HTTP/WebSocket 路由前拦截未进入 IP 白名单的客户端。
+/// Intercept clients not in IP allowlist before all HTTP/WebSocket routes.
 async fn ip_whitelist_middleware(
     State(state): State<AgentState>,
     request: Request,
@@ -145,16 +145,16 @@ async fn ip_whitelist_middleware(
     }
 }
 
-/// 构造客户端 IP 未进入白名单时的 HTTP 错误响应。
+/// Construct HTTP error response when client IP is not in allowlist.
 fn client_ip_error_response() -> Response {
     StatusCode::FORBIDDEN.into_response()
 }
 
-/// 处理单个 WebSocket 连接，并只转发该连接接受的任务。
+/// Handle individual WebSocket connection, forwarding only tasks accepted by that connection.
 async fn handle_socket(state: AgentState, socket: WebSocket, origin: Option<String>) {
     let (mut sender, mut receiver) = socket.split();
     let mut status_events = state.subscribe_status_events();
-    // 每个浏览器连接只接收自己提交任务的状态事件。
+    // Each browser connection only receives status events for tasks it submitted.
     let mut accepted_job_ids = HashSet::new();
 
     loop {
@@ -230,14 +230,14 @@ async fn handle_socket(state: AgentState, socket: WebSocket, origin: Option<Stri
     }
 }
 
-/// 单条客户端消息的处理结果，包含新绑定到该 socket 的任务。
+/// Processing result of single client message, including newly bound tasks on this socket.
 struct ClientTextOutcome {
     response: ServerMessage,
     accepted_job_ids: Vec<String>,
 }
 
 impl ClientTextOutcome {
-    /// 构造未接受新任务的响应结果。
+    /// Construct response result when no new tasks are accepted.
     fn response(response: ServerMessage) -> Self {
         Self {
             response,
@@ -246,7 +246,7 @@ impl ClientTextOutcome {
     }
 }
 
-/// 解析单条客户端文本帧，并返回协议响应。
+/// Parse single client text frame and return protocol response.
 async fn handle_client_text(
     state: &AgentState,
     text: &str,
@@ -446,8 +446,8 @@ async fn handle_client_text(
                 }
             };
 
-            // 保存所有已接受的任务 ID，便于后续 worker 状态广播
-            // 只过滤回当前这个 WebSocket 连接。
+            // Store all accepted task IDs so subsequent worker status broadcasts
+            // are filtered back exclusively to this WebSocket connection.
             let queued = jobs.len();
             let job_ids = jobs
                 .iter()
@@ -485,7 +485,7 @@ async fn handle_client_text(
     }
 }
 
-/// 返回可放行的本机 HTML Origin；只接受与 WebSocket 发起页完全同源的地址。
+/// Return allowable local HTML Origin; only accepts address strictly same-origin with WebSocket page.
 fn html_local_origin(
     jobs: &[PrintJobInput],
     origin: Option<&str>,
@@ -520,12 +520,12 @@ fn html_local_origin(
     Ok(Some(origin.origin().ascii_serialization()))
 }
 
-/// 判断 URL 是否使用受支持的精确 loopback 地址。
+/// Determine whether URL uses supported exact loopback address.
 fn is_exact_loopback_url(url: &url::Url) -> bool {
     matches!(url.host_str(), Some("127.0.0.1") | Some("::1"))
 }
 
-/// 把任务日志记录转换为单个连接的 WebSocket 状态消息。
+/// Convert task log entry to WebSocket status message for an individual connection.
 fn status_message_for_connection(
     entry: &TaskLogEntry,
     accepted_job_ids: &HashSet<String>,
@@ -543,7 +543,7 @@ fn status_message_for_connection(
     })
 }
 
-/// 把队列接收失败映射为协议错误消息。
+/// Map queue admission failure to protocol error message.
 fn queue_error_response(request_id: Option<String>, error: QueueError) -> ServerMessage {
     let error_code = match error {
         QueueError::DuplicateJobId => ErrorCode::JobDuplicated,
@@ -558,7 +558,7 @@ fn queue_error_response(request_id: Option<String>, error: QueueError) -> Server
     }
 }
 
-/// 构造协议字段无效时的错误响应。
+/// Construct error response for invalid protocol fields.
 fn invalid_message_response(request_id: Option<String>, message: String) -> ServerMessage {
     ServerMessage::Error {
         request_id,
@@ -567,7 +567,7 @@ fn invalid_message_response(request_id: Option<String>, message: String) -> Serv
     }
 }
 
-/// 把任务字段校验失败映射为 WebSocket 协议错误消息。
+/// Map task field validation failure to WebSocket protocol error message.
 fn job_validation_error_response(
     request_id: Option<String>,
     error: JobValidationError,
@@ -599,7 +599,7 @@ fn job_validation_error_response(
     }
 }
 
-/// 把打印后端错误映射为 WebSocket 协议错误消息。
+/// Map print backend error to WebSocket protocol error message.
 fn print_error_response(request_id: Option<String>, error: PrintError) -> ServerMessage {
     let error_code = match error {
         PrintError::PrinterNotFound(_) => ErrorCode::PrinterNotFound,

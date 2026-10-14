@@ -2,19 +2,19 @@ use std::io::{self, IsTerminal, Write};
 
 use crate::{CommandError, CommandErrorKind};
 
-/// CLI 密码输入与确认交互边界。
+/// CLI password entry and confirmation interaction boundary.
 pub trait CliInteraction: Send + Sync {
-    /// 读取不回显的密码。
+    /// Read non-echoing password input.
     fn read_password(&self, prompt: &str) -> Result<String, CommandError>;
 
-    /// 请求用户确认。
+    /// Request confirmation from user.
     fn confirm(&self, prompt: &str) -> Result<bool, CommandError>;
 
-    /// 返回当前是否可进行交互。
+    /// Return whether interaction is currently possible.
     fn is_interactive(&self) -> bool;
 }
 
-/// 使用当前终端输入输出的交互实现。
+/// Interaction implementation using current terminal standard I/O.
 pub struct TerminalInteraction;
 
 impl CliInteraction for TerminalInteraction {

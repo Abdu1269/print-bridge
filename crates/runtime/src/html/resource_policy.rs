@@ -152,9 +152,9 @@ use std::{
 };
 use url::Url;
 
-/// 将主机名解析为待连接地址的接口。
+/// Interface for resolving hostname to candidate connection addresses.
 pub trait HostResolver: Send + Sync {
-    /// 解析主机名及端口，返回所有候选地址。
+    /// Resolve hostname and port, returning all candidate addresses.
     fn resolve<'a>(
         &'a self,
         host: &'a str,
@@ -162,7 +162,7 @@ pub trait HostResolver: Send + Sync {
     ) -> Pin<Box<dyn Future<Output = io::Result<Vec<SocketAddr>>> + Send + 'a>>;
 }
 
-/// 使用系统 DNS 解析主机名。
+/// Resolve hostname using system DNS.
 pub struct SystemResolver;
 
 impl HostResolver for SystemResolver {
@@ -175,33 +175,33 @@ impl HostResolver for SystemResolver {
     }
 }
 
-/// 经过资源策略验证后可直接连接的目标。
+/// Target directly connectable after resource policy validation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedTarget {
-    /// 原始目标的 authority，供 HTTP Host 与 CONNECT 使用。
+    /// Target authority for use by HTTP Host and CONNECT.
     pub authority: String,
-    /// 已通过验证、必须用于实际连接的地址。
+    /// Validated address that must be used for actual connection.
     pub address: SocketAddr,
 }
 
-/// 只允许 HTML 渲染访问公开 HTTP(S) 资源的策略。
+/// Policy restricting HTML rendering to public HTTP(S) resources.
 #[derive(Clone)]
 pub struct ResourcePolicy {
     resolver: Arc<dyn HostResolver>,
 }
 
 impl ResourcePolicy {
-    /// 使用可注入 DNS 解析器创建策略。
+    /// Create policy with injectable DNS resolver.
     pub fn new(resolver: Arc<dyn HostResolver>) -> Self {
         Self { resolver }
     }
 
-    /// 使用操作系统 DNS 解析器创建策略。
+    /// Create policy using operating system DNS resolver.
     pub fn system() -> Self {
         Self::new(Arc::new(SystemResolver))
     }
 
-    /// 验证 URL、解析一次，并返回已经批准的连接地址。
+    /// Validate URL, resolve once, and return approved connection address.
     pub async fn resolve_public_target(
         &self,
         url: &Url,
@@ -209,7 +209,7 @@ impl ResourcePolicy {
         self.resolve_target(url, None).await
     }
 
-    /// 验证 URL 并返回已经批准的连接地址；可选地放行一个精确的本机 Origin。
+    /// Validate URL and return approved connection address, optionally allowing an exact local Origin.
     pub async fn resolve_target(
         &self,
         url: &Url,
@@ -282,7 +282,7 @@ fn approved_target(
     }
 }
 
-/// 判断主机是否是可由同源规则放行的精确 loopback 地址。
+/// Determine whether host is an exact loopback address permitted by same-origin rule.
 fn is_exact_loopback_host(host: &str) -> bool {
     matches!(host.parse::<IpAddr>(), Ok(IpAddr::V4(address)) if address.octets() == [127, 0, 0, 1])
         || matches!(host.parse::<IpAddr>(), Ok(IpAddr::V6(address)) if address.is_loopback())

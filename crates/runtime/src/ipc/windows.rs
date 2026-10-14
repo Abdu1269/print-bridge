@@ -14,12 +14,12 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-/// 返回 Windows 命名管道的稳定标识。
+/// Return stable identifier for Windows named pipe.
 pub fn socket_path(_runtime_dir: &Path) -> PathBuf {
     PathBuf::from(r"\\.\pipe\print-bridge-agent")
 }
 
-/// 启动 Windows 命名管道后台服务。
+/// Start Windows named pipe background service.
 pub fn bind_and_spawn(
     path: PathBuf,
     executor: Arc<dyn CommandExecutor>,
@@ -34,7 +34,7 @@ pub fn bind_and_spawn(
     )))
 }
 
-/// 直接运行 Windows 命名管道服务。
+/// Run Windows named pipe service directly.
 pub async fn serve_until(
     path: PathBuf,
     executor: Arc<dyn CommandExecutor>,

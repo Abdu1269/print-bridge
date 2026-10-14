@@ -94,17 +94,17 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
 ];
 
-/** 判断当前 WebView 是否已经完成或跳过首次使用引导。 */
+/** Check whether current WebView has completed or skipped the first-run onboarding tour. */
 export function isOnboardingCompleted(storage: Storage = window.localStorage): boolean {
   return storage.getItem(ONBOARDING_COMPLETED_STORAGE_KEY) === 'true';
 }
 
-/** 记录当前 WebView 已经完成或跳过首次使用引导。 */
+/** Record that current WebView has completed or skipped the first-run onboarding tour. */
 export function markOnboardingCompleted(storage: Storage = window.localStorage): void {
   storage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, 'true');
 }
 
-/** 等待跨 Tab 后的目标元素渲染，超时后允许跳过当前步骤。 */
+/** Wait for target element to render after switching tabs, allowing step skip on timeout. */
 async function waitForElement(selector: string, timeoutMs = 500): Promise<boolean> {
   if (document.querySelector(selector)) return true;
 
@@ -124,7 +124,7 @@ async function waitForElement(selector: string, timeoutMs = 500): Promise<boolea
   });
 }
 
-/** 在 Driver.js 弹层中加入唯一的显式退出操作。 */
+/** Render the explicit skip/exit button inside the Driver.js popover. */
 function renderSkipButton(popover: PopoverDOM, label: string, onSkip: () => void): void {
   const button = document.createElement('button');
   button.type = 'button';
@@ -134,7 +134,7 @@ function renderSkipButton(popover: PopoverDOM, label: string, onSkip: () => void
   popover.footerButtons.prepend(button);
 }
 
-/** 管理桌面窗口首次可见门控、Driver.js 生命周期和手动重播。 */
+/** Manage desktop window initial visibility gating, Driver.js lifecycle, and manual replay. */
 export function useOnboarding(options: UseOnboardingOptions): OnboardingController {
   const windowHasBeenVisible = ref(false);
   let autoStartAttempted = false;

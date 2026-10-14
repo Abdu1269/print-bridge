@@ -12,22 +12,22 @@ import type {
   TaskLogEntry,
 } from '@/types';
 
-/** 通过 Tauri 读取已持久化的 Agent 配置。 */
+/** Read persisted Agent configuration via Tauri. */
 export function getConfig(): Promise<AgentConfig> {
   return invoke<AgentConfig>('get_config');
 }
 
-/** 运行与 CLI 共用的 Desktop 只读环境检测。 */
+/** Run read-only desktop environment check shared with CLI. */
 export function runDoctor(): Promise<DoctorReport> {
   return invoke<DoctorReport>('run_doctor');
 }
 
-/** 通过 Tauri 保存 Agent 配置。 */
+/** Save Agent configuration via Tauri. */
 export function saveConfig(config: AgentConfig): Promise<AgentConfig> {
   return invoke<AgentConfig>('save_config', { config });
 }
 
-/** 导出加密配置文件。 */
+/** Export encrypted configuration file. */
 export function exportConfigFile(
   path: string,
   password: string,
@@ -36,12 +36,12 @@ export function exportConfigFile(
   return invoke<void>('export_config_file', { path, password, options });
 }
 
-/** 预览加密配置文件导入后的变更。 */
+/** Preview changes before importing encrypted configuration file. */
 export function previewConfigImport(path: string, password: string): Promise<ImportPreview> {
   return invoke<ImportPreview>('preview_config_import', { path, password });
 }
 
-/** 导入加密配置文件并返回保存后的 Agent 配置。 */
+/** Import encrypted configuration file and return saved Agent configuration. */
 export function importConfigFile(
   path: string,
   password: string,
@@ -50,12 +50,12 @@ export function importConfigFile(
   return invoke<AgentConfig>('import_config_file', { path, password, expectedFileHash });
 }
 
-/** 使用当前远程任务配置执行连接测试。 */
+/** Run connection test using current remote task configuration. */
 export function testRemoteConnection(config: AgentConfig): Promise<void> {
   return invoke<void>('test_remote_connection', { config });
 }
 
-/** 读取当前桌面应用是否为 debug 构建。 */
+/** Check whether current desktop app is a debug build. */
 export function isDebugBuild(): Promise<boolean> {
   return invoke<boolean>('is_debug_build');
 }
@@ -72,37 +72,37 @@ export function uninstallCliIntegration(): Promise<CliIntegrationStatus> {
   return invoke<CliIntegrationStatus>('uninstall_cli_integration');
 }
 
-/** 读取本地 Agent 保留的最近任务日志。 */
+/** Read recent task logs retained by local Agent. */
 export function getLogs(): Promise<TaskLogEntry[]> {
   return invoke<TaskLogEntry[]>('get_logs');
 }
 
-/** 读取最近任务历史。 */
+/** Read recent task history. */
 export function getTaskHistory(): Promise<TaskHistoryJob[]> {
   return invoke<TaskHistoryJob[]>('get_task_history');
 }
 
-/** 读取指定任务的历史事件。 */
+/** Read historical events for a specific task. */
 export function getTaskHistoryEvents(jobId: string): Promise<TaskHistoryEvent[]> {
   return invoke<TaskHistoryEvent[]>('get_task_history_events', { jobId });
 }
 
-/** 清空本地任务历史。 */
+/** Clear local task history. */
 export function clearTaskHistory(): Promise<void> {
   return invoke<void>('clear_task_history');
 }
 
-/** 通过共享命令服务读取打印机列表。 */
+/** Fetch list of printers via shared command service. */
 export function fetchPrinters(): Promise<PrinterInfo[]> {
   return invoke<PrinterInfo[]>('list_printers');
 }
 
-/** 通过共享命令服务读取指定打印机的纸张尺寸。 */
+/** Fetch paper sizes for a specific printer via shared command service. */
 export function fetchPapers(printerName: string): Promise<PaperInfo[]> {
   return invoke<PaperInfo[]>('list_papers', { printerName });
 }
 
-/** 使用当前默认打印设置提交一张测试校准页。 */
+/** Submit a test calibration page using current default print settings. */
 export function printTestPage(config: AgentConfig): Promise<void> {
   return invoke<void>('print_test', { config });
 }

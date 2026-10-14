@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 pub use print_bridge_core::queue::{QueueError, QueueState, QueuedJob};
 
-/// 转换为状态日志前的 worker 内部错误。
+/// Internal worker error before conversion to status log.
 #[derive(Debug, Error)]
 enum ProcessJobError {
     #[error("printer not configured")]
@@ -61,18 +61,18 @@ enum ProcessJobError {
     Print(#[from] PrintError),
 }
 
-/// 已规范化的可打印 PDF，以及产生它的 Office 转换器。
+/// Normalized printable PDF and the Office converter that produced it.
 struct PreparedPdf {
     path: PathBuf,
     office_converter: Option<&'static str>,
 }
 
-/// 运行后台 worker 循环，等待并处理队列任务。
+/// Run background worker loop waiting for and processing queued tasks.
 pub async fn run_worker(state: AgentState) {
     run_worker_until(state, CancellationToken::new()).await;
 }
 
-/// 运行后台 worker，取消后不再接受新任务，并让当前任务完成。
+/// Run background worker; accepts no new tasks after cancellation and lets current task finish.
 pub async fn run_worker_until(state: AgentState, shutdown: CancellationToken) {
     loop {
         if shutdown.is_cancelled() {
@@ -92,7 +92,7 @@ pub async fn run_worker_until(state: AgentState, shutdown: CancellationToken) {
     }
 }
 
-/// 处理一个队列任务，并在任务日志中记录成功或失败。
+/// Process a single queued task, recording success or failure in task logs.
 pub async fn process_job(state: &AgentState, queued_job: QueuedJob) {
     push_log(state, &queued_job, JobStatus::Queued, "queued").await;
 
@@ -101,7 +101,7 @@ pub async fn process_job(state: &AgentState, queued_job: QueuedJob) {
     }
 }
 
-/// 解析配置、下载文件、执行打印，并清理下载文件。
+/// Resolve configuration, download file, perform printing, and clean up downloaded file.
 async fn process_job_inner(
     state: &AgentState,
     queued_job: &QueuedJob,
@@ -132,7 +132,7 @@ async fn process_job_inner(
     result
 }
 
-/// 解码并提交 raw 打印指令，跳过下载和 PDF 规范化。
+/// Decode and submit raw printer commands, bypassing download and PDF normalization.
 async fn print_raw_job(
     state: &AgentState,
     queued_job: &QueuedJob,
@@ -194,7 +194,7 @@ async fn print_raw_job(
     Ok(())
 }
 
-/// 渲染 HTML 作业为临时 PDF，并复用现有 PDF 提交和状态追踪流程。
+/// Render HTML job to temporary PDF and reuse existing PDF submission and status tracking pipeline.
 async fn print_html_job(
     state: &AgentState,
     queued_job: &QueuedJob,
@@ -256,7 +256,7 @@ async fn print_html_job(
     result
 }
 
-/// 必要时转换下载文件，并提交给打印后端。
+/// Convert downloaded file if needed and submit to print backend.
 async fn print_downloaded_file(
     state: &AgentState,
     queued_job: &QueuedJob,
@@ -279,7 +279,7 @@ async fn print_downloaded_file(
 
     let result = submit_pdf_and_track(state, queued_job, options, &printable.path).await;
 
-    // 转换后的图片会生成第二个临时 PDF，原始 PDF 则复用下载路径。
+    // Converted images produce a second temporary PDF, while original PDFs reuse the download path.
     if printable.path != downloaded_path {
         cleanup_file(&printable.path).await;
     }
@@ -287,7 +287,7 @@ async fn print_downloaded_file(
     result
 }
 
-/// 把 PDF 提交给系统打印队列，并复用既有状态追踪和历史记录逻辑。
+/// Submit PDF to system print queue, reusing existing status tracking and history logging logic.
 async fn submit_pdf_and_track(
     state: &AgentState,
     queued_job: &QueuedJob,
@@ -339,7 +339,7 @@ async fn submit_pdf_and_track(
     Ok(())
 }
 
-/// 解析队列任务的打印机、纸张和份数设置。
+/// Resolve printer, paper, and copies settings for queued task.
 fn resolve_print_options(
     queued_job: &QueuedJob,
     config: &AgentConfig,
@@ -347,7 +347,7 @@ fn resolve_print_options(
     resolve_file_print_options(queued_job, config)
 }
 
-/// 解析文件类打印任务的打印机、纸张和份数设置。
+/// Resolve printer, paper, and copies settings for file-based print task.
 fn resolve_file_print_options(
     queued_job: &QueuedJob,
     config: &AgentConfig,
@@ -372,7 +372,7 @@ fn resolve_file_print_options(
     })
 }
 
-/// 解析 raw 打印任务的打印机设置。
+/// Resolve printer settings for raw print task.
 fn resolve_raw_print_options(
     queued_job: &QueuedJob,
     config: &AgentConfig,
@@ -394,7 +394,7 @@ fn resolve_printer_name(
         .ok_or(ProcessJobError::PrinterNotConfigured)
 }
 
-/// 确保下载文档是可打印 PDF，并与请求格式一致。
+/// Ensure downloaded document is a printable PDF matching requested format.
 async fn prepare_printable_pdf(
     downloaded_path: &Path,
     expected_format: SupportedFormat,
@@ -450,7 +450,7 @@ async fn prepare_printable_pdf(
     }
 }
 
-/// 为无扩展名的已下载 PDF 提供 .pdf 路径，适配需要扩展名的打印工具。
+/// Provide .pdf path for extensionless downloaded PDF, accommodating print tools requiring extension.
 async fn normalize_pdf_path(downloaded_path: &Path) -> Result<PathBuf, ProcessJobError> {
     if downloaded_path
         .extension()
@@ -465,7 +465,7 @@ async fn normalize_pdf_path(downloaded_path: &Path) -> Result<PathBuf, ProcessJo
     Ok(output_path)
 }
 
-/// 检查任务声明格式是否与检测到的文档字节一致。
+/// Verify declared task format matches detected document bytes.
 fn format_matches(expected: SupportedFormat, actual: DocumentFormat) -> bool {
     matches!(
         (expected, actual),
@@ -482,7 +482,7 @@ fn format_matches(expected: SupportedFormat, actual: DocumentFormat) -> bool {
     )
 }
 
-/// 返回请求格式在协议中的拼写。
+/// Return protocol spelling for requested format.
 fn supported_format_name(format: SupportedFormat) -> &'static str {
     match format {
         SupportedFormat::Pdf => "pdf",
@@ -499,7 +499,7 @@ fn supported_format_name(format: SupportedFormat) -> &'static str {
     }
 }
 
-/// 返回格式不匹配错误中使用的检测格式名称。
+/// Return detected format name used in format mismatch error.
 fn document_format_name(format: DocumentFormat) -> &'static str {
     match format {
         DocumentFormat::Pdf => "pdf",
@@ -516,7 +516,7 @@ fn office_format_name(format: OfficeFormat) -> &'static str {
     }
 }
 
-/// 把协议中的纸张尺寸转换为打印后端使用的纸张结构。
+/// Convert protocol paper dimensions to print backend paper struct.
 fn paper_info_from_effective(paper: &EffectivePaper) -> PaperInfo {
     PaperInfo {
         id: format!(
@@ -530,7 +530,7 @@ fn paper_info_from_effective(paper: &EffectivePaper) -> PaperInfo {
     }
 }
 
-/// 格式化纸张尺寸，去掉不必要的小数尾零。
+/// Format paper dimension, stripping unnecessary trailing decimal zeroes.
 fn format_paper_dimension(value: f64) -> String {
     if value.fract().abs() < f64::EPSILON {
         format!("{value:.0}")
@@ -542,12 +542,12 @@ fn format_paper_dimension(value: f64) -> String {
     }
 }
 
-/// 删除临时文件，并忽略清理失败。
+/// Delete temporary file, ignoring cleanup failures.
 async fn cleanup_file(path: &Path) {
     let _ = tokio::fs::remove_file(path).await;
 }
 
-/// 保存任务日志记录，并广播给已订阅的 WebSocket 客户端。
+/// Save task log entry and broadcast to subscribed WebSocket clients.
 async fn push_log(state: &AgentState, queued_job: &QueuedJob, status: JobStatus, message: &str) {
     push_log_with_metadata(state, queued_job, status, message, None).await;
 }

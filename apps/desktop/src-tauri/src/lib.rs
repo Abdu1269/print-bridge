@@ -41,7 +41,7 @@ const fn should_show_main_window_on_reopen(has_visible_windows: bool) -> bool {
     !has_visible_windows
 }
 
-/// 原生 WebView fallback 已因无法统一证明其资源隔离而禁用。
+/// Native WebView fallback is disabled because its resource isolation cannot be consistently proven.
 #[cfg(test)]
 const fn uses_gui_webview_fallback(mode: RuntimeMode, platform: RuntimePlatform) -> bool {
     let _ = (mode, platform);
@@ -63,7 +63,7 @@ fn existing_agent_startup_error(status: agent_guard::AgentPortStatus) -> Option<
     }
 }
 
-/// 启动 Tauri 应用、本地服务和后台打印 worker。
+/// Start the Tauri application, local service, and background print worker.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -153,12 +153,12 @@ pub fn run() {
     });
 }
 
-/// 从当前进程参数运行 CLI，供独立二进制入口调用。
+/// Run the CLI using current process arguments, called by standalone binary entry points.
 pub fn run_cli_from_env() -> i32 {
     cli::run_cli_from_env()
 }
 
-/// 选择当前平台的打印后端，并在需要时注入打包资源。
+/// Select the print backend for current platform and inject bundled resources when needed.
 fn print_backend(app: &tauri::App) -> tauri::Result<Box<dyn printing::PrintBackend + Send + Sync>> {
     #[cfg(target_os = "windows")]
     {

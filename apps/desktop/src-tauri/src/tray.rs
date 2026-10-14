@@ -27,7 +27,7 @@ struct TrayMenuItems {
     quit: MenuItem<tauri::Wry>,
 }
 
-/// 创建系统托盘菜单，并把菜单动作接到应用状态。
+/// Create system tray menu and connect menu actions to application state.
 pub fn setup_tray(app: &mut App, language: UiLanguage) -> tauri::Result<()> {
     let labels = tray_labels(language);
     let open = MenuItem::with_id(
@@ -88,7 +88,7 @@ pub fn setup_tray(app: &mut App, language: UiLanguage) -> tauri::Result<()> {
     Ok(())
 }
 
-/// 按当前界面语言更新已创建的托盘菜单文本。
+/// Update existing tray menu text according to current UI language.
 pub fn apply_tray_language(app: &tauri::AppHandle, language: UiLanguage) -> tauri::Result<()> {
     let Some(items) = app.try_state::<TrayMenuItems>() else {
         return Ok(());
@@ -126,7 +126,7 @@ fn tray_labels(language: UiLanguage) -> TrayLabels {
     }
 }
 
-/// 使用当前默认打印设置提交一张测试校准页。
+/// Submit a test calibration page using current default print settings.
 fn test_print(app: &tauri::AppHandle) {
     let Some(state) = app
         .try_state::<AgentState>()
@@ -143,7 +143,7 @@ fn test_print(app: &tauri::AppHandle) {
     });
 }
 
-/// 如果主设置窗口存在，则显示并聚焦它。
+/// Show and focus main settings window if it exists.
 pub(crate) fn show_main_window(app: &tauri::AppHandle) {
     #[cfg(target_os = "macos")]
     let _ = app.set_dock_visibility(true);
@@ -154,7 +154,7 @@ pub(crate) fn show_main_window(app: &tauri::AppHandle) {
     }
 }
 
-/// 切换系统开机自启，并持久化对应应用配置。
+/// Toggle system autostart and persist corresponding app configuration.
 fn toggle_autostart(app: &tauri::AppHandle) {
     let autolaunch = app.autolaunch();
     let enabled = match autolaunch.is_enabled() {
@@ -196,7 +196,7 @@ fn toggle_autostart(app: &tauri::AppHandle) {
     });
 }
 
-/// 从托盘菜单重启整个桌面应用。
+/// Restart the entire desktop application from the tray menu.
 fn restart_app(app: &tauri::AppHandle) {
     app.request_restart();
 }

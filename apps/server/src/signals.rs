@@ -1,4 +1,4 @@
-/// 等待 SIGINT 或 SIGTERM，触发一次优雅关闭。
+/// Wait for SIGINT or SIGTERM to trigger graceful shutdown.
 pub async fn shutdown_signal() -> std::io::Result<()> {
     #[cfg(unix)]
     {

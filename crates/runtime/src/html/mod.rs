@@ -9,41 +9,41 @@ use std::{future::Future, path::PathBuf, pin::Pin};
 use thiserror::Error;
 use url::Url;
 
-/// 浏览器渲染的 HTML 来源。
+/// Source of HTML rendered by browser.
 #[derive(Debug, Clone)]
 pub enum HtmlSource {
     Url(Url),
     Inline(String),
 }
 
-/// 浏览器渲染 HTML 所需的输入。
+/// Input required by browser to render HTML.
 #[derive(Debug, Clone)]
 pub struct HtmlRenderRequest {
     pub source: HtmlSource,
-    /// 允许访问的、与提交页面同源的本机 HTML 地址。
+    /// Allowable local HTML address sharing origin with submitting page.
     pub allowed_loopback_origin: Option<Url>,
     pub paper: EffectivePaper,
     pub wait_ms: u64,
     pub output_path: PathBuf,
 }
 
-/// HTML 渲染成功后的 PDF 结果。
+/// PDF result upon successful HTML rendering.
 #[derive(Debug, Clone)]
 pub struct HtmlRenderResult {
     pub renderer: &'static str,
     pub output_path: PathBuf,
 }
 
-/// HTML 渲染的异步结果。
+/// Async result of HTML rendering.
 pub type HtmlRenderFuture =
     Pin<Box<dyn Future<Output = Result<HtmlRenderResult, HtmlRenderError>> + Send>>;
 
-/// 将受限 HTML 来源渲染为 PDF 的后端。
+/// Backend rendering restricted HTML sources into PDF.
 pub trait HtmlRenderer: Send + Sync {
     fn render(&self, request: HtmlRenderRequest) -> HtmlRenderFuture;
 }
 
-/// HTML 渲染阶段发生的错误。
+/// Errors occurring during HTML rendering phase.
 #[derive(Debug, Error)]
 pub enum HtmlRenderError {
     #[error("no installed Chromium-family browser is available; searched: {searched:?}")]

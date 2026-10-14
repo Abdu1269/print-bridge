@@ -8,7 +8,7 @@ use url::Url;
 pub const DEFAULT_HTML_WAIT_MS: u64 = 1_000;
 pub const MAX_HTML_WAIT_MS: u64 = 30_000;
 
-/// 浏览器侧打印任务可提交的文件格式。
+/// File formats accepted for browser print tasks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SupportedFormat {
@@ -26,12 +26,12 @@ pub enum SupportedFormat {
     RawHtml,
 }
 
-/// 字符串无法解析为支持格式时返回的错误。
+/// Error returned when string cannot be parsed into a supported format.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseSupportedFormatError;
 
 impl fmt::Display for ParseSupportedFormatError {
-    /// 写入稳定的可读解析错误。
+    /// Write stable human-readable parse error.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("unsupported file format")
     }
@@ -42,7 +42,7 @@ impl std::error::Error for ParseSupportedFormatError {}
 impl FromStr for SupportedFormat {
     type Err = ParseSupportedFormatError;
 
-    /// 解析浏览器 SDK 使用的小写传输格式名称。
+    /// Parse lowercase wire format names used by browser SDK.
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
             "pdf" => Ok(Self::Pdf),
@@ -61,7 +61,7 @@ impl FromStr for SupportedFormat {
     }
 }
 
-/// 浏览器 Origin、文件 URL 和纸张尺寸的校验错误。
+/// Validation errors for browser Origin, file URL, and paper dimensions.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum ProtocolError {
     #[error("invalid origin")]
@@ -76,7 +76,7 @@ pub enum ProtocolError {
     InvalidPaperDimensions,
 }
 
-/// 单个打印任务字段组合不符合协议时返回的错误。
+/// Error returned when print task field combinations violate protocol specifications.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum JobValidationError {
     #[error("raw job requires data_base64")]
@@ -115,7 +115,7 @@ pub enum JobValidationError {
     HtmlWaitOutOfRange,
 }
 
-/// 任务和配置合并后的纸张尺寸。
+/// Merged paper dimensions from task and configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EffectivePaper {
     pub width_mm: f64,
@@ -123,7 +123,7 @@ pub struct EffectivePaper {
 }
 
 impl EffectivePaper {
-    /// 确保纸张宽高都为正数。
+    /// Ensure paper width and height are positive.
     pub fn validate(&self) -> Result<(), ProtocolError> {
         if self.width_mm > 0.0 && self.height_mm > 0.0 {
             Ok(())
@@ -133,7 +133,7 @@ impl EffectivePaper {
     }
 }
 
-/// 从浏览器客户端收到的单个打印任务。
+/// Single print task received from browser client.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrintJobInput {
     pub job_id: String,
@@ -155,7 +155,7 @@ pub struct PrintJobInput {
 }
 
 impl PrintJobInput {
-    /// 校验任务字段组合是否可被接收进入队列。
+    /// Validate whether task field combinations can be accepted into the queue.
     pub fn validate_for_acceptance(&self, max_file_size_mb: u64) -> Result<(), JobValidationError> {
         match self.format {
             SupportedFormat::Raw => self.validate_raw(max_file_size_mb),
@@ -217,7 +217,7 @@ impl PrintJobInput {
         Ok(())
     }
 
-    /// 校验仅 HTML 作业才能携带的字段未出现在其他格式中。
+    /// Validate that fields exclusive to HTML jobs do not appear in other formats.
     fn validate_non_html_fields(&self) -> Result<(), JobValidationError> {
         if self.html.is_some() {
             return Err(JobValidationError::NonHtmlHtmlNotAllowed);
@@ -229,7 +229,7 @@ impl PrintJobInput {
         Ok(())
     }
 
-    /// 校验通过 URL 访问的 HTML 作业字段组合。
+    /// Validate field combinations for URL-based HTML jobs.
     fn validate_html_file_job(&self) -> Result<(), JobValidationError> {
         let file_url = self
             .file_url
@@ -246,7 +246,7 @@ impl PrintJobInput {
         self.validate_html_wait()
     }
 
-    /// 校验直接携带 HTML 文本的作业字段组合。
+    /// Validate field combinations for inline HTML text jobs.
     fn validate_raw_html(&self, max_file_size_mb: u64) -> Result<(), JobValidationError> {
         if self.file_url.is_some() {
             return Err(JobValidationError::RawHtmlFileUrlNotAllowed);
@@ -267,7 +267,7 @@ impl PrintJobInput {
         self.validate_html_wait()
     }
 
-    /// 校验 HTML 页面渲染前允许的等待时间。
+    /// Validate allowable wait time before HTML page rendering.
     fn validate_html_wait(&self) -> Result<(), JobValidationError> {
         if matches!(self.wait_ms, Some(wait_ms) if wait_ms > MAX_HTML_WAIT_MS) {
             return Err(JobValidationError::HtmlWaitOutOfRange);
@@ -277,7 +277,7 @@ impl PrintJobInput {
     }
 }
 
-/// WebSocket 协议接受的浏览器客户端消息。
+/// Browser client messages accepted by the WebSocket protocol.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
@@ -306,7 +306,7 @@ pub enum ClientMessage {
     },
 }
 
-/// 本地 Agent 返回给浏览器客户端的消息。
+/// Messages returned to browser clients by the local Agent.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServerMessage {
@@ -342,7 +342,7 @@ pub enum ServerMessage {
     },
 }
 
-/// 单台打印机及其可用纸张的 WebSocket 响应体。
+/// WebSocket response body for a single printer and its available papers.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrinterDetails {
     pub name: String,
@@ -357,7 +357,7 @@ pub struct PrinterDetails {
     pub media_types: Vec<PrinterMediaTypeInfo>,
 }
 
-/// 当前内存打印队列中的任务摘要。
+/// Summary of tasks currently in the in-memory print queue.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrintQueueJobInfo {
     pub request_id: String,
@@ -367,7 +367,7 @@ pub struct PrintQueueJobInfo {
     pub message: Option<String>,
 }
 
-/// 协议和本地日志中暴露的打印任务状态。
+/// Print task states exposed in protocol and local logs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum JobStatus {
@@ -381,7 +381,7 @@ pub enum JobStatus {
     Cancelled,
 }
 
-/// 以 SCREAMING_SNAKE_CASE 字符串序列化的协议错误码。
+/// Protocol error codes serialized as SCREAMING_SNAKE_CASE strings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
@@ -405,12 +405,12 @@ pub enum ErrorCode {
     InternalError,
 }
 
-/// 检查传入 WebSocket Origin 是否精确匹配允许列表。
+/// Check whether incoming WebSocket Origin strictly matches allowlist.
 pub fn is_allowed_origin(origin: Option<&str>, allowed_origins: &[String]) -> bool {
     origin.is_some_and(|origin| allowed_origins.iter().any(|allowed| allowed == origin))
 }
 
-/// 校验并规范化允许的浏览器 Origin 字符串。
+/// Validate and normalize allowed browser Origin string.
 pub fn validate_origin(value: &str) -> Result<(), ProtocolError> {
     let url = Url::parse(value).map_err(|_| ProtocolError::InvalidOrigin)?;
 
@@ -426,7 +426,7 @@ pub fn validate_origin(value: &str) -> Result<(), ProtocolError> {
     }
 }
 
-/// 校验打印文件 URL 是否可通过 HTTP(S) 下载或以内联 PDF data URL 提供。
+/// Validate that print file URL is downloadable via HTTP(S) or provided as inline PDF data URL.
 pub fn validate_file_url(value: &str) -> Result<Url, ProtocolError> {
     let url = Url::parse(value).map_err(|_| ProtocolError::InvalidFileUrl)?;
 
@@ -437,9 +437,9 @@ pub fn validate_file_url(value: &str) -> Result<Url, ProtocolError> {
     }
 }
 
-/// 校验 HTML 页面 URL 必须是带 authority 的绝对 HTTP(S) 地址。
+/// Validate that HTML page URL is an absolute HTTP(S) URL with authority.
 ///
-/// 主机名和 IP 是否可访问由渲染时的 `ResourcePolicy` 继续判断。
+/// Hostname and IP reachability are further evaluated during rendering by `ResourcePolicy`.
 pub fn validate_html_file_url(value: &str) -> Result<Url, ProtocolError> {
     let url = Url::parse(value).map_err(|_| ProtocolError::InvalidFileUrl)?;
 
@@ -453,7 +453,7 @@ pub fn validate_html_file_url(value: &str) -> Result<Url, ProtocolError> {
     Ok(url)
 }
 
-/// 判断 file_url 是否是 PrintBridge 接受的 base64 PDF data URL。
+/// Determine whether file_url is a base64 PDF data URL accepted by PrintBridge.
 pub fn is_pdf_data_url(value: &str) -> bool {
     let Some(payload) = value.strip_prefix("data:") else {
         return false;

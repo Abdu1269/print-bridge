@@ -9,7 +9,7 @@ use print_bridge_runtime::{ipc, RuntimeBuilder, RuntimeCommandExecutor, RuntimeP
 
 use crate::product_cli::DesktopProductCommandAdapter;
 
-/// 从当前进程参数运行两个产品共享的功能 CLI。
+/// Run the functional CLI shared by both products using current process arguments.
 pub fn run_cli_from_env() -> i32 {
     let argv = std::env::args_os().collect::<Vec<_>>();
     if let Some(output) = cli_display_output_from(argv.clone()) {

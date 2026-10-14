@@ -6,13 +6,13 @@ use super::{
 };
 use std::{collections::HashMap, io::Write, path::Path, process::Command};
 
-/// 基于 CUPS 命令行工具的打印后端。
+/// Print backend based on CUPS command-line utilities.
 #[derive(Debug, Clone, Copy)]
 pub struct CupsPrintBackend {
     platform: CupsPlatform,
 }
 
-/// CUPS 后端当前运行的平台差异。
+/// Platform differences for the running CUPS backend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CupsPlatform {
     #[cfg(any(target_os = "macos", test))]
@@ -22,7 +22,7 @@ pub enum CupsPlatform {
 }
 
 impl CupsPrintBackend {
-    /// 创建 macOS CUPS 打印后端。
+    /// Create macOS CUPS print backend.
     #[cfg(any(target_os = "macos", test))]
     pub fn macos() -> Self {
         Self {
@@ -30,7 +30,7 @@ impl CupsPrintBackend {
         }
     }
 
-    /// 创建 Linux CUPS 打印后端。
+    /// Create Linux CUPS print backend.
     #[cfg(any(target_os = "linux", test))]
     pub fn linux() -> Self {
         Self {
@@ -58,7 +58,7 @@ impl CupsPrintBackend {
 }
 
 impl PrintBackend for CupsPrintBackend {
-    /// 列出 CUPS 目标，并标记当前默认打印机。
+    /// List CUPS destinations and mark current default printer.
     fn list_printers(&self) -> PrintResult<Vec<PrinterInfo>> {
         let printers_output = run_command("lpstat", &["-e"])?;
         let default_printer = current_default_printer();
@@ -75,7 +75,7 @@ impl PrintBackend for CupsPrintBackend {
         Ok(printers)
     }
 
-    /// 列出 CUPS 纸张选项；不可用时回退到常见标签纸尺寸。
+    /// List CUPS paper options; falls back to common label sizes if unavailable.
     fn list_papers(&self, printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
         ensure_printer_exists(self, printer_name)?;
 
@@ -89,19 +89,19 @@ impl PrintBackend for CupsPrintBackend {
         }
     }
 
-    /// 列出 CUPS 纸盒或进纸来源选项。
+    /// List CUPS input tray or paper source options.
     fn list_trays(&self, printer_name: &str) -> PrintResult<Vec<PrinterTrayInfo>> {
         ensure_printer_exists(self, printer_name)?;
         read_lpoptions(printer_name).map(|output| parse_lpoptions_trays(&output))
     }
 
-    /// 列出 CUPS 介质类型选项。
+    /// List CUPS media type options.
     fn list_media_types(&self, printer_name: &str) -> PrintResult<Vec<PrinterMediaTypeInfo>> {
         ensure_printer_exists(self, printer_name)?;
         read_lpoptions(printer_name).map(|output| parse_lpoptions_media_types(&output))
     }
 
-    /// 使用明确的份数和介质设置把 PDF 发送给 CUPS。
+    /// Send PDF to CUPS with explicit copies and media settings.
     fn print_pdf(&self, path: &Path, options: &PrintOptions) -> PrintResult<PrintSubmission> {
         ensure_printer_exists(self, &options.printer_name)?;
         let paper = resolve_print_paper(self, options)?;
@@ -136,7 +136,7 @@ impl PrintBackend for CupsPrintBackend {
         }
     }
 
-    /// 使用 CUPS raw 模式把原始打印指令提交给打印机。
+    /// Submit raw print commands to printer using CUPS raw mode.
     fn print_raw(&self, data: &[u8], options: &RawPrintOptions) -> PrintResult<PrintSubmission> {
         ensure_printer_exists(self, &options.printer_name)?;
         let path = temp_raw_path();
@@ -246,7 +246,7 @@ fn completed_jobs_contains_job(output: &str, job_id: &str) -> bool {
     })
 }
 
-/// 把 `lpstat -e` 输出解析为打印机摘要。
+/// Parse `lpstat -e` output into printer summaries.
 fn parse_lpstat_destinations(
     output: &str,
     default_printer: Option<&str>,
@@ -274,14 +274,14 @@ fn parse_lpstat_destinations(
         .collect()
 }
 
-/// 读取当前默认 CUPS 目标。
+/// Read current default CUPS destination.
 fn current_default_printer() -> Option<String> {
     run_command("lpstat", &["-d"])
         .ok()
         .and_then(|output| parse_default_destination(&output))
 }
 
-/// 读取 CUPS 目标和设备 URI 的映射。
+/// Read mapping of CUPS destinations and device URIs.
 fn current_printer_ports() -> HashMap<String, String> {
     run_command("lpstat", &["-v"])
         .ok()
@@ -289,7 +289,7 @@ fn current_printer_ports() -> HashMap<String, String> {
         .unwrap_or_default()
 }
 
-/// 解析 `lpstat -v` 输出中的设备 URI。
+/// Parse device URIs from `lpstat -v` output.
 fn parse_lpstat_devices(output: &str) -> HashMap<String, String> {
     output
         .lines()
@@ -305,7 +305,7 @@ fn parse_lpstat_devices(output: &str) -> HashMap<String, String> {
         .collect()
 }
 
-/// 根据 CUPS 设备 URI 做保守的本地/网络/虚拟分类。
+/// Perform conservative local/network/virtual classification based on CUPS device URI.
 fn classify_port(port: &str) -> (Option<bool>, Option<bool>, Option<bool>) {
     let lower = port.to_ascii_lowercase();
     let is_virtual = lower.starts_with("file:") || lower.contains("pdf") || lower.contains("fax");
@@ -331,7 +331,7 @@ fn classify_port(port: &str) -> (Option<bool>, Option<bool>, Option<bool>) {
     }
 }
 
-/// 解析本地化或英文的 `lpstat -d` 输出。
+/// Parse localized or English `lpstat -d` output.
 fn parse_default_destination(output: &str) -> Option<String> {
     output.lines().find_map(|line| {
         let (_, destination) = line.rsplit_once(':').or_else(|| line.rsplit_once('：'))?;
@@ -344,7 +344,7 @@ fn parse_default_destination(output: &str) -> Option<String> {
     })
 }
 
-/// 从 `lpoptions -l` 输出中提取页面或介质选项。
+/// Extract page or media options from `lpoptions -l` output.
 fn parse_lpoptions_papers(output: &str) -> Vec<PaperInfo> {
     output
         .lines()
@@ -356,7 +356,7 @@ fn parse_lpoptions_papers(output: &str) -> Vec<PaperInfo> {
         .collect()
 }
 
-/// 从 `lpoptions -l` 输出中提取纸盒或进纸来源。
+/// Extract paper trays or input bins from `lpoptions -l` output.
 fn parse_lpoptions_trays(output: &str) -> Vec<PrinterTrayInfo> {
     output
         .lines()
@@ -369,7 +369,7 @@ fn parse_lpoptions_trays(output: &str) -> Vec<PrinterTrayInfo> {
         .collect()
 }
 
-/// 从 `lpoptions -l` 输出中提取介质类型。
+/// Extract media types from `lpoptions -l` output.
 fn parse_lpoptions_media_types(output: &str) -> Vec<PrinterMediaTypeInfo> {
     output
         .lines()
@@ -382,7 +382,7 @@ fn parse_lpoptions_media_types(output: &str) -> Vec<PrinterMediaTypeInfo> {
         .collect()
 }
 
-/// 从 `lpoptions -l` 输出中提取当前或最高 DPI。
+/// Extract current or highest DPI from `lpoptions -l` output.
 fn parse_lpoptions_dpi(output: &str) -> Option<u32> {
     output
         .lines()
@@ -403,7 +403,7 @@ struct OptionChoice {
     name: String,
 }
 
-/// 把一行 CUPS/PPD 选项解析为通用 choices。
+/// Parse a single line of CUPS/PPD options into generic choices.
 fn parse_option_choices(line: &str) -> Vec<OptionChoice> {
     let Some((_, choices)) = line.split_once(':') else {
         return Vec::new();
@@ -437,7 +437,7 @@ fn parse_dpi_choice(choice: &str) -> Option<u32> {
         .max()
 }
 
-/// 把一行 CUPS 选项解析为该行中的所有纸张选项。
+/// Parse a line of CUPS options into all paper options present on that line.
 fn parse_paper_line(line: &str) -> Vec<PaperInfo> {
     let Some((_, choices)) = line.split_once(':') else {
         return Vec::new();
@@ -449,7 +449,7 @@ fn parse_paper_line(line: &str) -> Vec<PaperInfo> {
         .collect()
 }
 
-/// 把一个 CUPS 介质 token 解析为毫米纸张尺寸。
+/// Parse a CUPS media token into millimeter paper dimensions.
 fn parse_paper_choice(choice: &str) -> Option<PaperInfo> {
     if let Some((name, width_mm, height_mm)) = known_paper_size(choice) {
         return Some(PaperInfo {
@@ -474,7 +474,7 @@ fn parse_paper_choice(choice: &str) -> Option<PaperInfo> {
     })
 }
 
-/// 识别 CUPS/PPD 中常见的命名纸张 token。
+/// Identify common named paper tokens in CUPS/PPD.
 fn known_paper_size(choice: &str) -> Option<(&'static str, f64, f64)> {
     let token = normalized_media_token(choice);
     if media_token_has_part(&token, "a3") || media_token_has_part(&token, "a3jis") {
@@ -523,7 +523,7 @@ fn media_token_has_part(token: &str, part: &str) -> bool {
     token.split('_').any(|item| item == part)
 }
 
-/// 解析 `Custom.60x40mm`、`iso_a4_210x297mm` 或 `8.5x11` 这类尺寸 token。
+/// Parse size tokens such as `Custom.60x40mm`, `iso_a4_210x297mm`, or `8.5x11`.
 fn parse_dimension_pair(size: &str) -> Option<(f64, f64)> {
     let normalized_size = size.replace("mmx", "x");
     let (size_without_unit, unit) = strip_unit_suffix(&normalized_size);
@@ -575,7 +575,7 @@ fn leading_number(value: &str) -> Option<f64> {
     value[..end].parse().ok()
 }
 
-/// 在查询纸张或打印前确保打印机名称存在。
+/// Ensure printer name exists before querying papers or printing.
 fn ensure_printer_exists(backend: &CupsPrintBackend, printer_name: &str) -> PrintResult<()> {
     if backend
         .list_printers()?
@@ -588,7 +588,7 @@ fn ensure_printer_exists(backend: &CupsPrintBackend, printer_name: &str) -> Prin
     }
 }
 
-/// 根据打印机支持的纸张列表解析请求纸张。
+/// Resolve requested paper against printer-supported paper list.
 fn resolve_print_paper(
     backend: &CupsPrintBackend,
     options: &PrintOptions,
@@ -597,7 +597,7 @@ fn resolve_print_paper(
     Ok(resolve_paper_for_print(&papers, &options.paper))
 }
 
-/// 为失败的平台命令构造 PrintError。
+/// Construct PrintError for failed platform command.
 fn command_error(command: &str, message: String) -> PrintError {
     PrintError::CommandFailed {
         command: command.to_string(),
@@ -605,7 +605,7 @@ fn command_error(command: &str, message: String) -> PrintError {
     }
 }
 
-/// 运行命令，并在命令成功退出时返回 stdout。
+/// Execute command and return stdout upon successful exit.
 fn run_command(command: &str, args: &[&str]) -> PrintResult<String> {
     let output = Command::new(command)
         .args(args)
@@ -622,7 +622,7 @@ fn run_command(command: &str, args: &[&str]) -> PrintResult<String> {
     }
 }
 
-/// 读取指定打印机的 CUPS/PPD 选项。
+/// Read CUPS/PPD options for specified printer.
 fn read_lpoptions(printer_name: &str) -> PrintResult<String> {
     let output = Command::new("lpoptions")
         .args(["-p", printer_name, "-l"])

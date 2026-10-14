@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use print_bridge_runtime::RuntimePaths;
 
-/// 返回 headless 系统服务的固定配置、状态和运行目录。
+/// Return fixed configuration, state, and runtime directories for headless system service.
 pub fn system_paths() -> RuntimePaths {
     RuntimePaths::new(
         env_path("PRINT_BRIDGE_CONFIG_PATH", "/etc/print-bridge/config.json"),

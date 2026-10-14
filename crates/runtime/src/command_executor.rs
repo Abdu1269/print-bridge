@@ -14,14 +14,14 @@ use crate::{
     test_print::print_calibration_page_with_config,
 };
 
-/// 使用运行中 AgentState 执行共享功能命令。
+/// Execute shared functional commands using running AgentState.
 pub struct RuntimeCommandExecutor {
     state: AgentState,
     listen_addr: SocketAddr,
 }
 
 impl RuntimeCommandExecutor {
-    /// 创建运行时命令执行器。
+    /// Create runtime command executor.
     pub fn new(state: AgentState, listen_addr: SocketAddr) -> Self {
         Self { state, listen_addr }
     }

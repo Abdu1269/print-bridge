@@ -1,5 +1,11 @@
 # 源码地图
 
+<div align="right">
+
+[English](./source-map_en.md)
+
+</div>
+
 开发者代码库指南：文件职责、修改各区域时的注意事项，以及关键设计决策。
 
 ## 项目结构

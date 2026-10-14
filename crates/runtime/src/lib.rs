@@ -1,4 +1,4 @@
-//! PrintBridge Agent 的运行状态、平台适配和后台任务。
+//! Runtime state, platform adaptations, and background tasks for the PrintBridge Agent.
 
 pub use print_bridge_core::{config, ip_whitelist, protocol, remote_protocol};
 

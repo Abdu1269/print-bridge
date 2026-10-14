@@ -9,7 +9,7 @@ use crate::{
 };
 use std::{path::PathBuf, sync::Arc};
 
-/// Agent 配置、持久化数据和进程内运行文件的位置。
+/// File locations for Agent configuration, persistent data, and in-process runtime files.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimePaths {
     pub config_path: PathBuf,
@@ -18,7 +18,7 @@ pub struct RuntimePaths {
 }
 
 impl RuntimePaths {
-    /// 使用配置文件与数据目录构造路径集合。
+    /// Construct path set using configuration file and data directories.
     pub fn new(config_path: PathBuf, data_dir: PathBuf, runtime_dir: PathBuf) -> Self {
         Self {
             config_path,
@@ -27,18 +27,18 @@ impl RuntimePaths {
         }
     }
 
-    /// 返回远程任务数据库路径。
+    /// Return remote task database path.
     pub fn remote_store_path(&self) -> PathBuf {
         self.data_dir.join("remote.sqlite3")
     }
 
-    /// 返回任务历史数据库路径。
+    /// Return task history database path.
     pub fn task_history_path(&self) -> PathBuf {
         self.data_dir.join("task_history.sqlite3")
     }
 }
 
-/// 组装 Agent runtime 所需平台实现和持久化路径。
+/// Assemble platform implementations and persistent paths required by Agent runtime.
 pub struct RuntimeBuilder {
     paths: RuntimePaths,
     printing: Option<Box<dyn PrintBackend + Send + Sync>>,
@@ -46,7 +46,7 @@ pub struct RuntimeBuilder {
 }
 
 impl RuntimeBuilder {
-    /// 使用明确的配置、数据和运行目录开始组装。
+    /// Begin assembly with explicit configuration, data, and runtime directories.
     pub fn new(paths: RuntimePaths) -> Self {
         Self {
             paths,
@@ -55,19 +55,19 @@ impl RuntimeBuilder {
         }
     }
 
-    /// 注入当前产品选择的平台打印后端。
+    /// Inject platform printing backend selected for current product.
     pub fn print_backend(mut self, printing: Box<dyn PrintBackend + Send + Sync>) -> Self {
         self.printing = Some(printing);
         self
     }
 
-    /// 注入 HTML renderer，供测试和平台产品替换默认实现。
+    /// Inject HTML renderer, allowing tests and platform products to override default implementation.
     pub fn html_renderer(mut self, renderer: Arc<dyn HtmlRenderer>) -> Self {
         self.html_renderer = Some(renderer);
         self
     }
 
-    /// 创建目录、加载配置和打开持久化 stores。
+    /// Create directories, load configuration, and open persistent stores.
     pub fn build(self) -> Result<AgentRuntime, RuntimeError> {
         std::fs::create_dir_all(&self.paths.data_dir)?;
         std::fs::create_dir_all(&self.paths.runtime_dir)?;

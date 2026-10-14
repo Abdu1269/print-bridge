@@ -1,4 +1,4 @@
-/** Agent 配置中保存的实际纸张尺寸。 */
+/** Effective paper size saved in Agent configuration. */
 export interface EffectivePaper {
   width_mm: number;
   height_mm: number;
@@ -39,7 +39,7 @@ export interface DoctorReport {
   summary: DoctorSummary;
 }
 
-/** Tauri UI 和本地 Agent 共享的完整配置。 */
+/** Complete configuration shared between Tauri UI and local Agent. */
 export interface AgentConfig {
   service: {
     host: string;
@@ -76,7 +76,7 @@ export interface AgentConfig {
   };
 }
 
-/** 本地服务返回的打印机摘要。 */
+/** Printer summary returned by the local service. */
 export interface PrinterInfo {
   name: string;
   is_default: boolean;
@@ -87,7 +87,7 @@ export interface PrinterInfo {
   is_virtual: boolean | null;
 }
 
-/** 本地服务返回的纸张尺寸摘要。 */
+/** Paper size summary returned by the local service. */
 export interface PaperInfo {
   id: string;
   name: string;
@@ -95,7 +95,7 @@ export interface PaperInfo {
   height_mm: number;
 }
 
-/** 桌面 UI 展示的最近任务日志记录。 */
+/** Recent task log entry displayed in the desktop UI. */
 export interface TaskLogEntry {
   timestamp: string;
   request_id: string | null;

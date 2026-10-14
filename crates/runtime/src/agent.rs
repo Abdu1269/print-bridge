@@ -17,7 +17,7 @@ type RuntimeTasks = (
     JoinHandle<Result<(), io::Error>>,
 );
 
-/// Agent runtime 组装、启动或停止失败。
+/// Failure during Agent runtime assembly, startup, or shutdown.
 #[derive(Debug, Error)]
 pub enum RuntimeError {
     #[error(transparent)]
@@ -34,7 +34,7 @@ pub enum RuntimeError {
     TaskJoin(#[from] tokio::task::JoinError),
 }
 
-/// 尚未启动的 Agent runtime。
+/// Agent runtime that has not yet started.
 pub struct AgentRuntime {
     paths: RuntimePaths,
     state: AgentState,
@@ -45,17 +45,17 @@ impl AgentRuntime {
         Self { paths, state }
     }
 
-    /// 返回 runtime 使用的路径。
+    /// Return paths used by runtime.
     pub fn paths(&self) -> &RuntimePaths {
         &self.paths
     }
 
-    /// 返回尚未启动时也可供离线命令使用的状态。
+    /// Return state available for offline commands before startup.
     pub fn state(&self) -> AgentState {
         self.state.clone()
     }
 
-    /// 绑定 WebSocket listener，并启动队列和远程 worker。
+    /// Bind WebSocket listener and start queue and remote workers.
     pub async fn start(self) -> Result<AgentHandle, RuntimeError> {
         let config = self.state.config.read().await.clone();
         match check_agent_port(&config) {
@@ -100,7 +100,7 @@ impl AgentRuntime {
     }
 }
 
-/// 正在运行的 Agent 及其统一停止入口。
+/// Running Agent instance and its unified shutdown handle.
 pub struct AgentHandle {
     state: AgentState,
     listen_addr: SocketAddr,
@@ -109,17 +109,17 @@ pub struct AgentHandle {
 }
 
 impl AgentHandle {
-    /// 返回可供 GUI/命令服务共享的状态。
+    /// Return state shareable with GUI and command services.
     pub fn state(&self) -> AgentState {
         self.state.clone()
     }
 
-    /// 返回实际绑定地址；端口配置为 0 时也返回操作系统分配值。
+    /// Return actual bound address; returns OS-assigned address even when port is 0.
     pub fn listen_addr(&self) -> SocketAddr {
         self.listen_addr
     }
 
-    /// 通知所有后台任务停止并等待清理完成。
+    /// Notify all background tasks to stop and wait for cleanup to complete.
     pub async fn shutdown(&self) -> Result<(), RuntimeError> {
         self.shutdown.cancel();
         let Some((server_task, queue_task, remote_task, ipc_task)) = self.tasks.lock().await.take()

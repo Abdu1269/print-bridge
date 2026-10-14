@@ -1,4 +1,4 @@
-//! 过滤代理实现。
+//! Filtering proxy implementation.
 
 use crate::html::{resource_policy::ResourcePolicy, HtmlRenderError, HtmlSource};
 use bytes::Bytes;
@@ -84,9 +84,9 @@ impl RejectedResourceTracker {
     }
 }
 
-/// 只可连接资源策略已经批准地址的连接器。
+/// Connector restricted to addresses approved by resource policy.
 pub trait ApprovedConnector: Send + Sync {
-    /// 连接资源策略已批准的套接字地址。
+    /// Connect to socket address approved by resource policy.
     fn connect<'a>(
         &'a self,
         approved_address: SocketAddr,
@@ -118,7 +118,7 @@ struct InlineRoute {
     body: String,
 }
 
-/// 只允许公开 HTTP(S) 资源的本机过滤代理。
+/// Local filtering proxy permitting only public HTTP(S) resources.
 pub struct FilteringProxy {
     proxy_url: Url,
     inline_url: Option<Url>,
@@ -128,7 +128,7 @@ pub struct FilteringProxy {
 }
 
 impl FilteringProxy {
-    /// 在随机环回端口启动过滤代理。
+    /// Start filtering proxy on a random loopback port.
     pub async fn start(
         policy: ResourcePolicy,
         inline_html: Option<String>,
@@ -212,17 +212,17 @@ impl FilteringProxy {
         })
     }
 
-    /// 返回浏览器应配置的本机代理地址。
+    /// Return local proxy address that browser should configure.
     pub fn proxy_url(&self) -> &Url {
         &self.proxy_url
     }
 
-    /// 返回内联 HTML 的随机 synthetic URL。
+    /// Return random synthetic URL for inline HTML.
     pub fn inline_url(&self) -> Option<&Url> {
         self.inline_url.as_ref()
     }
 
-    /// 返回指定 HTML 来源的浏览目标 URL。
+    /// Return browsing target URL for specified HTML source.
     pub fn target_url(&self, source: HtmlSource) -> Url {
         let target_url = match source {
             HtmlSource::Url(url) => url,
@@ -235,7 +235,7 @@ impl FilteringProxy {
         target_url
     }
 
-    /// 返回本次渲染中被资源策略拒绝的第一个资源 URL。
+    /// Return first resource URL rejected by resource policy during this rendering session.
     pub fn rejected_resource(&self) -> Option<String> {
         self.rejected_resource.get()
     }
@@ -244,7 +244,7 @@ impl FilteringProxy {
         self.rejected_resource.clone()
     }
 
-    /// 停止 accept loop，并等待监听器在返回前释放。
+    /// Stop accept loop and wait for listener to release before returning.
     pub(crate) async fn shutdown(&mut self) {
         if let Some(shutdown) = self.shutdown.take() {
             let _ = shutdown.send(());
@@ -446,7 +446,7 @@ impl ProxyState {
     }
 }
 
-/// 返回代理请求的目标 authority，兼容 absolute-form 与 origin-form 请求行。
+/// Return target authority of proxy request, accepting both absolute-form and origin-form request lines.
 fn request_authority(request: &Request<Incoming>) -> Option<&str> {
     request
         .uri()
@@ -460,7 +460,7 @@ fn request_authority(request: &Request<Incoming>) -> Option<&str> {
         })
 }
 
-/// 将 HTTP 代理请求还原为绝对 URL，兼容 WebView 使用的 origin-form 请求行。
+/// Restore HTTP proxy request to absolute URL, compatible with origin-form request lines used by WebViews.
 fn proxy_request_url(request: &Request<Incoming>) -> Result<Url, HtmlRenderError> {
     if request.uri().scheme().is_some() {
         return Url::parse(&request.uri().to_string())

@@ -2,13 +2,13 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::{path::Path, sync::Mutex};
 use uuid::Uuid;
 
-/// 远程任务去重和状态回报事件的 SQLite 存储。
+/// SQLite storage for remote task deduplication and status reporting events.
 #[derive(Debug)]
 pub struct RemoteStore {
     conn: Mutex<Connection>,
 }
 
-/// 回报给远程服务的任务状态。
+/// Task status reported back to remote service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RemoteReportStatus {
     Accepted,
@@ -16,7 +16,7 @@ pub enum RemoteReportStatus {
     Failed,
 }
 
-/// 远程状态事件的投递状态。
+/// Delivery state of remote status events.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RemoteDeliveryState {
     Pending,
@@ -24,14 +24,14 @@ pub enum RemoteDeliveryState {
     Abandoned,
 }
 
-/// 状态回报投递失败后的重试决策。
+/// Retry decision after failed status report delivery.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeliveryFailureOutcome {
     WillRetry,
     Abandoned,
 }
 
-/// 新远程任务的去重记录输入。
+/// Deduplication record input for new remote task.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewRemoteJob<'a> {
     pub request_id: &'a str,
@@ -40,7 +40,7 @@ pub struct NewRemoteJob<'a> {
     pub first_seen_at: &'a str,
 }
 
-/// 新远程状态回报事件的写入输入。
+/// Write input for new remote status reporting event.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewRemoteStatusEvent<'a> {
     pub job_id: &'a str,
@@ -52,7 +52,7 @@ pub struct NewRemoteStatusEvent<'a> {
     pub next_retry_at: &'a str,
 }
 
-/// 等待投递或已投递的远程状态回报事件。
+/// Remote status reporting event pending delivery or delivered.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RemoteStatusEvent {
     pub event_id: String,
@@ -69,13 +69,13 @@ pub struct RemoteStatusEvent {
 }
 
 impl RemoteStore {
-    /// 打开或创建磁盘上的远程任务存储。
+    /// Open or create on-disk remote task store.
     pub fn open(path: &Path) -> rusqlite::Result<Self> {
         let conn = Connection::open(path)?;
         Self::from_connection(conn)
     }
 
-    /// 打开仅用于测试或临时运行的内存远程任务存储。
+    /// Open in-memory remote task store for testing or ephemeral runs.
     pub fn open_in_memory() -> rusqlite::Result<Self> {
         Self::from_connection(Connection::open_in_memory()?)
     }
@@ -88,7 +88,7 @@ impl RemoteStore {
         Ok(store)
     }
 
-    /// 记录远程任务并返回是否为首次出现。
+    /// Record remote task and return whether it is seen for the first time.
     pub fn record_job_if_new(&self, job: &NewRemoteJob<'_>) -> rusqlite::Result<bool> {
         let conn = self.conn.lock().expect("remote store mutex poisoned");
         let inserted = conn.execute(
@@ -101,7 +101,7 @@ impl RemoteStore {
         Ok(inserted == 1)
     }
 
-    /// 插入待投递的远程状态事件。
+    /// Insert pending remote status event for delivery.
     pub fn insert_status_event(
         &self,
         event: &NewRemoteStatusEvent<'_>,
@@ -132,7 +132,7 @@ impl RemoteStore {
         Self::find_status_event_locked(&conn, &event_id)
     }
 
-    /// 读取到达重试时间的待投递状态事件。
+    /// Read pending status events that have reached their retry time.
     pub fn pending_status_events(
         &self,
         now: &str,
@@ -153,7 +153,7 @@ impl RemoteStore {
         rows.collect()
     }
 
-    /// 标记远程状态事件已成功投递。
+    /// Mark remote status event as successfully delivered.
     pub fn mark_delivered(&self, event_id: &str, delivered_at: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().expect("remote store mutex poisoned");
         conn.execute(
@@ -165,7 +165,7 @@ impl RemoteStore {
         Ok(())
     }
 
-    /// 记录状态事件投递失败，并判断是否继续重试。
+    /// Record status event delivery failure and determine whether to continue retrying.
     pub fn mark_delivery_failed(
         &self,
         event_id: &str,
@@ -206,7 +206,7 @@ impl RemoteStore {
         Ok(outcome)
     }
 
-    /// 清理早于指定时间的已投递状态事件。
+    /// Prune delivered status events older than specified cutoff.
     pub fn cleanup_delivered_before(&self, cutoff: &str) -> rusqlite::Result<usize> {
         let conn = self.conn.lock().expect("remote store mutex poisoned");
         conn.execute(
@@ -291,7 +291,7 @@ impl RemoteStore {
 }
 
 impl RemoteReportStatus {
-    /// 返回远程服务协议中使用的状态字符串。
+    /// Return status string used in remote service protocol.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Accepted => "accepted",
@@ -311,7 +311,7 @@ impl RemoteReportStatus {
 }
 
 impl RemoteDeliveryState {
-    /// 返回数据库中使用的投递状态字符串。
+    /// Return delivery state string used in database.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Pending => "pending",

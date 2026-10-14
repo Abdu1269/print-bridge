@@ -8,7 +8,7 @@ use crate::{
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-/// 测试打印校准页时可能返回的错误。
+/// Errors that can occur when printing a test calibration page.
 #[derive(Debug, Error)]
 pub enum TestPrintError {
     #[error("printer not configured")]
@@ -21,13 +21,13 @@ pub enum TestPrintError {
     Print(#[from] PrintError),
 }
 
-/// 使用当前默认打印设置生成并提交一张标签校准页。
+/// Generate and submit a label calibration page using current default print settings.
 pub async fn print_calibration_page(state: &AgentState) -> Result<(), TestPrintError> {
     let config = state.config.read().await.clone();
     print_calibration_page_with_config(state, config).await
 }
 
-/// 使用指定配置生成并提交一张标签校准页，不持久化配置。
+/// Generate and submit a label calibration page using specified configuration without persisting it.
 pub async fn print_calibration_page_with_config(
     state: &AgentState,
     config: AgentConfig,

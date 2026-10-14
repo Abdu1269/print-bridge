@@ -15,7 +15,7 @@ use tokio::sync::{broadcast, Mutex, Notify, RwLock};
 
 const STATUS_EVENT_CAPACITY: usize = 128;
 
-/// Tauri 命令、HTTP 路由和 worker 共享的运行时状态。
+/// Runtime state shared across Tauri commands, HTTP routes, and workers.
 #[derive(Clone)]
 pub struct AgentState {
     pub config: Arc<RwLock<AgentConfig>>,
@@ -33,17 +33,17 @@ pub struct AgentState {
 }
 
 impl AgentState {
-    /// 使用当前平台默认打印后端创建应用状态。
+    /// Create application state using current platform default print backend.
     pub fn new(config: AgentConfig) -> Self {
         Self::with_printing(config, default_backend())
     }
 
-    /// 创建会把配置持久化到指定路径的应用状态。
+    /// Create application state that persists configuration to specified path.
     pub fn with_config_path(config: AgentConfig, config_path: PathBuf) -> Self {
         Self::with_config_path_and_printing(config, config_path, default_backend())
     }
 
-    /// 使用注入的打印后端创建可持久化的应用状态。
+    /// Create persistable application state with injected print backend.
     pub fn with_config_path_and_printing(
         config: AgentConfig,
         config_path: PathBuf,
@@ -57,7 +57,7 @@ impl AgentState {
         )
     }
 
-    /// 使用注入的打印后端创建不绑定配置文件的应用状态。
+    /// Create unpersisted application state with injected print backend.
     pub fn with_printing(
         config: AgentConfig,
         printing: Box<dyn PrintBackend + Send + Sync>,
@@ -65,7 +65,7 @@ impl AgentState {
         Self::with_printing_and_html_renderer(config, printing, default_html_renderer())
     }
 
-    /// 使用注入的打印和 HTML 渲染后端创建不绑定配置文件的应用状态。
+    /// Create unpersisted application state with injected print and HTML rendering backends.
     pub fn with_printing_and_html_renderer(
         config: AgentConfig,
         printing: Box<dyn PrintBackend + Send + Sync>,
@@ -74,7 +74,7 @@ impl AgentState {
         Self::with_printing_and_config_path(config, printing, html_renderer, None)
     }
 
-    /// 使用注入的打印和 HTML 渲染后端创建可持久化的应用状态。
+    /// Create persistable application state with injected print and HTML rendering backends.
     pub fn with_config_path_printing_and_html_renderer(
         config: AgentConfig,
         config_path: PathBuf,
@@ -84,7 +84,7 @@ impl AgentState {
         Self::with_printing_and_config_path(config, printing, html_renderer, Some(config_path))
     }
 
-    /// 构造所有公开构造函数共用的状态容器。
+    /// Construct state container shared across all public constructors.
     fn with_printing_and_config_path(
         config: AgentConfig,
         printing: Box<dyn PrintBackend + Send + Sync>,
@@ -108,19 +108,19 @@ impl AgentState {
         }
     }
 
-    /// 注入远程任务 SQLite 存储，供生产启动和相关测试使用。
+    /// Inject remote task SQLite store for production startup and tests.
     pub fn with_remote_store(mut self, remote_store: RemoteStore) -> Self {
         self.remote_store = Some(Arc::new(remote_store));
         self
     }
 
-    /// 注入任务历史 SQLite 存储，供生产启动和相关测试使用。
+    /// Inject task history SQLite store for production startup and tests.
     pub fn with_task_history_store(mut self, task_history: TaskHistoryStore) -> Self {
         self.task_history = Some(Arc::new(task_history));
         self
     }
 
-    /// 校验、按需持久化并应用新配置。
+    /// Validate, optionally persist, and apply new configuration.
     pub async fn save_config(&self, config: AgentConfig) -> Result<AgentConfig, io::Error> {
         for origin in &config.security.allowed_origins {
             validate_origin(origin)
@@ -153,12 +153,12 @@ impl AgentState {
         Ok(config)
     }
 
-    /// 为单个 WebSocket 连接订阅 worker 状态事件。
+    /// Subscribe to worker status events for a single WebSocket connection.
     pub fn subscribe_status_events(&self) -> broadcast::Receiver<TaskLogEntry> {
         self.status_events.subscribe()
     }
 
-    /// 向活跃订阅者广播状态事件。
+    /// Broadcast status event to active subscribers.
     pub fn broadcast_status(&self, entry: TaskLogEntry) {
         let _ = self.status_events.send(entry);
     }

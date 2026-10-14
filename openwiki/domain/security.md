@@ -1,5 +1,11 @@
 # 安全模型
 
+<div align="right">
+
+[English](./security_en.md)
+
+</div>
+
 PrintBridge 运行在用户的本地电脑上，可以访问本地打印机。安全通过双层白名单架构（IP + Origin）、用于部署的加密配置传输和清晰的信任边界来保障。
 
 ## 双层白名单架构

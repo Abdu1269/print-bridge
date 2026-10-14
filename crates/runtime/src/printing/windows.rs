@@ -28,14 +28,14 @@ use windows_sys::Win32::{
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-/// Windows 打印后端：用 PowerShell 发现打印机，用 SumatraPDF 执行打印。
+/// Windows printing backend: discovers printers via PowerShell and prints via SumatraPDF.
 #[derive(Debug, Clone)]
 pub struct WindowsPrintBackend {
     sumatra_path: PathBuf,
 }
 
 impl Default for WindowsPrintBackend {
-    /// 使用应用二进制文件旁边打包的 SumatraPDF 可执行文件。
+    /// Uses the SumatraPDF executable bundled alongside the application binary.
     fn default() -> Self {
         Self {
             sumatra_path: bundled_sumatra_path(),
@@ -44,7 +44,7 @@ impl Default for WindowsPrintBackend {
 }
 
 impl WindowsPrintBackend {
-    /// 使用显式 SumatraPDF 路径创建后端，主要用于应用初始化和测试。
+    /// Create backend using explicit SumatraPDF path, primarily for app initialization and testing.
     pub fn new(sumatra_path: impl Into<PathBuf>) -> Self {
         Self {
             sumatra_path: sumatra_path.into(),
@@ -53,7 +53,7 @@ impl WindowsPrintBackend {
 }
 
 impl PrintBackend for WindowsPrintBackend {
-    /// 通过 PowerShell JSON 输出列出 Windows 打印机。
+    /// List Windows printers via PowerShell JSON output.
     fn list_printers(&self) -> PrintResult<Vec<PrinterInfo>> {
         let output = hidden_command("powershell")
             .args([
@@ -74,13 +74,13 @@ impl PrintBackend for WindowsPrintBackend {
         parse_printers_json(&String::from_utf8_lossy(&output.stdout))
     }
 
-    /// 读取可用纸型编号及当前驱动方向下已验证的物理毫米尺寸。
+    /// Read available paper IDs and verified physical millimeter dimensions under current driver orientation.
     fn list_papers(&self, printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
         ensure_printer_exists(self, printer_name)?;
         read_driver_papers(printer_name)
     }
 
-    /// 按任务尺寸选择驱动纸型，使用明确的份数和内容方向发送 PDF。
+    /// Select driver paper matching task dimensions, sending PDF with explicit copies and content orientation.
     fn print_pdf(&self, path: &Path, options: &PrintOptions) -> PrintResult<PrintSubmission> {
         let papers = self.list_papers(&options.printer_name)?;
         let settings = sumatra_print_settings(options.copies, &options.paper, &papers)?;
@@ -109,7 +109,7 @@ impl PrintBackend for WindowsPrintBackend {
         }
     }
 
-    /// 使用 Windows RAW spooler 把原始打印指令提交给打印机。
+    /// Submit raw print commands to printer using Windows RAW spooler.
     fn print_raw(&self, data: &[u8], options: &RawPrintOptions) -> PrintResult<PrintSubmission> {
         ensure_printer_exists(self, &options.printer_name)?;
         submit_raw_to_windows_printer(&options.printer_name, data)?;
@@ -134,7 +134,7 @@ impl PrintBackend for WindowsPrintBackend {
     }
 }
 
-/// 安全枚举表单，再验证驱动编号在 SumatraPDF 等效配置下的物理尺寸。
+/// Safely enumerate forms and verify driver ID physical dimensions under equivalent SumatraPDF settings.
 fn read_driver_papers(printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
     let name = wide_null(printer_name);
     let mut printer = PRINTER_HANDLE {
@@ -148,7 +148,7 @@ fn read_driver_papers(printer_name: &str) -> PrintResult<Vec<PaperInfo>> {
     result
 }
 
-/// 对已打开的打印机读取表单，保留用户默认设置用于纸型编号的等效验证。
+/// Read forms for opened printer, retaining user defaults for paper ID equivalence verification.
 fn read_validated_papers(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Vec<PaperInfo>> {
     let default_mode = read_default_devmode(printer, name)?;
     let (forms, count) = read_buffer("EnumFormsW", |buffer| {
@@ -213,7 +213,7 @@ fn read_validated_papers(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<V
         {
             continue;
         }
-        // SumatraPDF 3.6.1 只覆盖默认 DEVMODE 的纸型编号，再交给驱动验证。
+        // SumatraPDF 3.6.1 only overrides paper ID in default DEVMODE, then delegates verification to driver.
         let mut effective = default_mode.clone();
         let mode = unsafe { &mut *effective.as_mut_ptr().cast::<DEVMODEW>() };
         mode.Anonymous1.Anonymous1.dmPaperSize = kind;
@@ -241,7 +241,7 @@ fn read_validated_papers(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<V
     Ok(papers)
 }
 
-/// 把带容量 Win32 查询的返回值转换为重试或失败结果。
+/// Convert sized Win32 query return value into retry or error outcome.
 fn buffer_read_result(ok: i32, needed: u32, count: u32) -> BufferRead {
     if ok != 0 {
         BufferRead::Complete(count as usize)
@@ -252,7 +252,7 @@ fn buffer_read_result(ok: i32, needed: u32, count: u32) -> BufferRead {
     }
 }
 
-/// 读取用户默认 DEVMODE，未设置用户配置时使用全局默认配置。
+/// Read user default DEVMODE; falls back to global default configuration if user settings are not configured.
 fn read_default_devmode(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Vec<u64>> {
     for level in [9, 8] {
         let (buffer, _) = read_buffer("GetPrinterW", |buffer| {
@@ -303,11 +303,11 @@ fn read_default_devmode(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Ve
         if public_size < std::mem::size_of::<DEVMODEW>() || start + length > end {
             return Err(command_error("GetPrinterW", "invalid DEVMODE size".into()));
         }
-        // dmSize 和 dmDriverExtra 均为 WORD：完整 DEVMODE 最大为 2 * u16::MAX 字节。
-        // 保留该上界容量，DocumentProperties 合并时即使私有数据长度变化也不会越界。
+        // dmSize and dmDriverExtra are WORD: full DEVMODE is at most 2 * u16::MAX bytes.
+        // Retaining this upper bound ensures DocumentProperties merge will not overflow even if private data length changes.
         let mut mode = vec![0_u64; (2 * usize::from(u16::MAX)).div_ceil(8)];
         unsafe { ptr::copy_nonoverlapping(source.cast::<u8>(), mode.as_mut_ptr().cast(), length) };
-        // 与 SumatraPDF NewPrinter 一样，用驱动当前默认配置初始化完整 DEVMODE。
+        // As in SumatraPDF NewPrinter, initialize full DEVMODE using current driver default configuration.
         if unsafe {
             DocumentPropertiesW(
                 ptr::null_mut(),
@@ -329,7 +329,7 @@ fn read_default_devmode(printer: PRINTER_HANDLE, name: &[u16]) -> PrintResult<Ve
     ))
 }
 
-/// 在内存中让驱动验证完整 DEVMODE，不保存到打印机默认设置。
+/// Have driver verify full DEVMODE in memory without persisting to printer defaults.
 fn validate_devmode(printer: PRINTER_HANDLE, name: &[u16], mode: &mut [u64]) -> bool {
     let pointer = mode.as_mut_ptr().cast::<DEVMODEW>();
     unsafe {
@@ -344,7 +344,7 @@ fn validate_devmode(printer: PRINTER_HANDLE, name: &[u16], mode: &mut [u64]) -> 
     }
 }
 
-/// 读取等效打印配置的物理页面毫米尺寸，不创建打印任务。
+/// Read physical page millimeter dimensions of equivalent print configuration without creating print job.
 fn physical_paper_size(name: &[u16], mode: &[u64]) -> Option<(f64, f64)> {
     let dc = unsafe {
         CreateICW(
@@ -437,7 +437,7 @@ fn last_os_error() -> String {
     std::io::Error::last_os_error().to_string()
 }
 
-/// PowerShell 的 ConvertTo-Json 可能返回单个对象或数组。
+/// PowerShell ConvertTo-Json may return a single object or an array.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum PrinterJson {
@@ -445,7 +445,7 @@ enum PrinterJson {
     Many(Vec<PowerShellPrinter>),
 }
 
-/// PowerShell 返回的原始打印机结构。
+/// Raw printer struct returned by PowerShell.
 #[derive(Debug, Deserialize)]
 struct PowerShellPrinter {
     #[serde(rename = "Name")]
@@ -464,7 +464,7 @@ struct PowerShellPrinter {
     print_quality: Option<serde_json::Value>,
 }
 
-/// 把 PowerShell 打印机 JSON 解析为平台无关的打印机摘要。
+/// Parse PowerShell printer JSON into platform-independent printer summary.
 fn parse_printers_json(value: &str) -> PrintResult<Vec<PrinterInfo>> {
     if value.trim().is_empty() {
         return Ok(Vec::new());
@@ -484,7 +484,7 @@ fn parse_printers_json(value: &str) -> PrintResult<Vec<PrinterInfo>> {
 }
 
 impl From<PowerShellPrinter> for PrinterInfo {
-    /// 把 PowerShell 字段名转换为共享打印机类型。
+    /// Convert PowerShell field names into shared printer types.
     fn from(value: PowerShellPrinter) -> Self {
         let dpi = value
             .print_quality
@@ -586,14 +586,14 @@ fn ensure_printer_exists(backend: &WindowsPrintBackend, printer_name: &str) -> P
     }
 }
 
-/// 创建不打开独立控制台窗口的 Windows 子进程。
+/// Create Windows child process without spawning detached console window.
 fn hidden_command(program: impl AsRef<OsStr>) -> Command {
     let mut command = Command::new(program);
     command.creation_flags(CREATE_NO_WINDOW);
     command
 }
 
-/// 在当前可执行文件旁查找打包的 SumatraPDF，并提供 PATH 兜底。
+/// Locate bundled SumatraPDF next to current executable, with PATH fallback.
 fn bundled_sumatra_path() -> PathBuf {
     std::env::current_exe()
         .ok()
@@ -601,7 +601,7 @@ fn bundled_sumatra_path() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("SumatraPDF.exe"))
 }
 
-/// 为失败的平台命令构造 PrintError。
+/// Construct PrintError for failed platform command.
 fn command_error(command: &str, message: String) -> PrintError {
     PrintError::CommandFailed {
         command: command.to_string(),

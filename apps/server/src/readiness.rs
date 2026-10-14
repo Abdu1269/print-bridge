@@ -1,7 +1,7 @@
 #[cfg(unix)]
 use std::os::unix::net::UnixDatagram;
 
-/// 向 systemd 发送 READY/STOPPING 等状态；非 systemd 环境为 no-op。
+/// Send READY/STOPPING status to systemd; no-op in non-systemd environments.
 pub fn notify(message: &str) -> std::io::Result<()> {
     let Some(socket) = std::env::var_os("NOTIFY_SOCKET") else {
         return Ok(());

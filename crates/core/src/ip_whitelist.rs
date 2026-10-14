@@ -1,10 +1,10 @@
 use ipnet::IpNet;
 use std::net::IpAddr;
 
-/// IP 白名单中始终保留的本机回环地址。
+/// Local loopback address always retained in IP allowlist.
 pub const REQUIRED_LOOPBACK_IP: &str = "127.0.0.1";
 
-/// 规范化 IP 白名单，并确保本机回环地址始终存在。
+/// Normalize IP allowlist, ensuring local loopback address is always present.
 pub fn normalize_allowed_ips(entries: Vec<String>) -> Vec<String> {
     let mut normalized = vec![REQUIRED_LOOPBACK_IP.to_string()];
 
@@ -21,7 +21,7 @@ pub fn normalize_allowed_ips(entries: Vec<String>) -> Vec<String> {
     normalized
 }
 
-/// 校验单个 IP 白名单项是否为合法 IP 或 CIDR 网段。
+/// Validate whether a single IP allowlist entry is a valid IP or CIDR network.
 pub fn validate_allowed_ip_entry(entry: &str) -> Result<(), String> {
     let entry = entry.trim();
     if entry.is_empty() {
@@ -48,7 +48,7 @@ pub fn validate_allowed_ip_entry(entry: &str) -> Result<(), String> {
         .map_err(|_| format!("IP 或网段无效: {entry}"))
 }
 
-/// 判断客户端 IP 是否命中白名单中的单个 IP 或 CIDR 网段。
+/// Determine whether client IP matches a single IP or CIDR network in allowlist.
 pub fn is_client_ip_allowed(client_ip: IpAddr, entries: &[String]) -> bool {
     if client_ip.is_loopback() {
         return true;
@@ -59,7 +59,7 @@ pub fn is_client_ip_allowed(client_ip: IpAddr, entries: &[String]) -> bool {
         .any(|entry| entry_matches_client_ip(entry, client_ip))
 }
 
-/// 判断单条白名单配置是否匹配客户端 IP。
+/// Determine whether a single allowlist entry matches client IP.
 fn entry_matches_client_ip(entry: &str, client_ip: IpAddr) -> bool {
     if let Ok(ip) = entry.parse::<IpAddr>() {
         return ip == client_ip;

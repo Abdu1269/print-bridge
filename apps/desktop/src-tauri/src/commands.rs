@@ -15,7 +15,7 @@ use std::{net::TcpListener, path::PathBuf, sync::Arc};
 use tauri::State;
 use tauri_plugin_autostart::ManagerExt;
 
-/// 返回当前 Agent 配置给 Tauri 前端。
+/// Return current Agent configuration to Tauri frontend.
 #[tauri::command]
 pub async fn get_config(
     service: State<'_, Arc<CommandService>>,
@@ -26,7 +26,7 @@ pub async fn get_config(
     }
 }
 
-/// 运行 Desktop 产品的只读本地环境检测。
+/// Run read-only local environment diagnostics for Desktop product.
 #[tauri::command]
 pub async fn run_doctor(
     service: State<'_, Arc<CommandService>>,
@@ -34,7 +34,7 @@ pub async fn run_doctor(
     run_doctor_with_service(service.inner().as_ref()).await
 }
 
-/// 通过共享命令服务运行 Desktop Doctor，便于绕过 Tauri State 测试。
+/// Run Desktop Doctor via shared command service, allowing tests to bypass Tauri State.
 async fn run_doctor_with_service(service: &CommandService) -> Result<DoctorReport, CommandError> {
     match service
         .execute(Command::Doctor {
@@ -47,25 +47,25 @@ async fn run_doctor_with_service(service: &CommandService) -> Result<DoctorRepor
     }
 }
 
-/// 返回当前运行的桌面应用是否为 debug 构建。
+/// Check whether currently running desktop application is a debug build.
 #[tauri::command]
 pub fn is_debug_build() -> bool {
     cfg!(debug_assertions)
 }
 
-/// 返回当前平台的命令行工具安装状态。
+/// Return command-line tool installation status for current platform.
 #[tauri::command]
 pub async fn get_cli_integration_status() -> Result<CliIntegrationStatus, CommandError> {
     run_cli_integration(cli_integration::status).await
 }
 
-/// 安装当前用户可管理的命令行工具入口。
+/// Install command-line tool entry point manageable by current user.
 #[tauri::command]
 pub async fn install_cli_integration() -> Result<CliIntegrationStatus, CommandError> {
     run_cli_integration(cli_integration::install).await
 }
 
-/// 移除当前用户可管理的命令行工具入口。
+/// Remove command-line tool entry point manageable by current user.
 #[tauri::command]
 pub async fn uninstall_cli_integration() -> Result<CliIntegrationStatus, CommandError> {
     run_cli_integration(cli_integration::uninstall).await
@@ -85,7 +85,7 @@ async fn run_cli_integration(
         .map_err(|error| CommandError::new(print_bridge_cli::CommandErrorKind::Runtime, error))
 }
 
-/// 应用应用层设置，并保存完整 Agent 配置。
+/// Apply application-level settings and save complete Agent configuration.
 #[tauri::command]
 pub async fn save_config(
     app: tauri::AppHandle,
@@ -128,7 +128,7 @@ pub async fn save_config(
     Ok(saved)
 }
 
-/// 导出当前配置到加密文件。
+/// Export current configuration to an encrypted file.
 #[tauri::command]
 pub async fn export_config_file(
     path: String,
@@ -146,7 +146,7 @@ pub async fn export_config_file(
     Ok(())
 }
 
-/// 解密配置文件并返回导入前差异预览。
+/// Decrypt configuration file and return pre-import diff preview.
 #[tauri::command]
 pub async fn preview_config_import(
     path: String,
@@ -165,7 +165,7 @@ pub async fn preview_config_import(
     }
 }
 
-/// 解密并导入配置文件，要求文件哈希和预览时一致。
+/// Decrypt and import configuration file, requiring file hash to match preview.
 #[tauri::command]
 pub async fn import_config_file(
     path: String,
@@ -186,7 +186,7 @@ pub async fn import_config_file(
     }
 }
 
-/// 使用远程配置执行 GET/POST 连接测试。
+/// Run GET/POST connection test using remote configuration.
 #[tauri::command]
 pub async fn test_remote_connection(
     config: AgentConfig,
@@ -198,7 +198,7 @@ pub async fn test_remote_connection(
     Ok(())
 }
 
-/// 通过 AgentState 保存配置，便于测试绕过 Tauri app handle。
+/// Save configuration via AgentState, allowing tests to bypass Tauri app handle.
 #[cfg(test)]
 pub(crate) async fn save_config_for_state(
     config: AgentConfig,
@@ -210,7 +210,7 @@ pub(crate) async fn save_config_for_state(
         .map_err(|error| error.to_string())
 }
 
-/// 通过 Tauri 自启动插件启用或禁用系统开机自启。
+/// Enable or disable system autostart via Tauri autostart plugin.
 fn apply_autostart(app: &tauri::AppHandle, enabled: bool) -> Result<(), String> {
     let autolaunch = app.autolaunch();
     let is_enabled = autolaunch.is_enabled().map_err(|error| error.to_string())?;
@@ -237,7 +237,7 @@ fn check_service_port_available_for_host(host: &str, port: u16) -> Result<(), St
         .map_err(|_| format!("本地端口 {port} 已被占用，请换一个端口"))
 }
 
-/// 返回最近任务日志给 Tauri 前端。
+/// Return recent task logs to Tauri frontend.
 #[tauri::command]
 pub async fn get_logs(
     service: State<'_, Arc<CommandService>>,
@@ -248,7 +248,7 @@ pub async fn get_logs(
     }
 }
 
-/// 返回本地任务历史摘要给 Tauri 前端。
+/// Return local task history summary to Tauri frontend.
 #[tauri::command]
 pub async fn get_task_history(
     service: State<'_, Arc<CommandService>>,
@@ -259,7 +259,7 @@ pub async fn get_task_history(
     }
 }
 
-/// 返回指定任务的历史状态事件给 Tauri 前端。
+/// Return historical status events for specified task to Tauri frontend.
 #[tauri::command]
 pub async fn get_task_history_events(
     job_id: String,
@@ -274,7 +274,7 @@ pub async fn get_task_history_events(
     }
 }
 
-/// 清空本地任务日志和任务历史。
+/// Clear local task logs and task history.
 #[tauri::command]
 pub async fn clear_task_history(
     service: State<'_, Arc<CommandService>>,
@@ -283,7 +283,7 @@ pub async fn clear_task_history(
     Ok(())
 }
 
-/// 通过 AgentState 读取任务历史摘要，便于测试绕过 Tauri State。
+/// Read task history summary via AgentState, allowing tests to bypass Tauri State.
 #[cfg(test)]
 pub(crate) fn get_task_history_for_state(
     state: &AgentState,
@@ -294,7 +294,7 @@ pub(crate) fn get_task_history_for_state(
     store.recent_jobs(500).map_err(|error| error.to_string())
 }
 
-/// 通过 AgentState 读取指定任务事件，便于测试绕过 Tauri State。
+/// Read specified task events via AgentState, allowing tests to bypass Tauri State.
 #[cfg(test)]
 pub(crate) fn get_task_history_events_for_state(
     job_id: &str,
@@ -308,7 +308,7 @@ pub(crate) fn get_task_history_events_for_state(
         .map_err(|error| error.to_string())
 }
 
-/// 通过 AgentState 清空任务历史，便于测试绕过 Tauri State。
+/// Clear task history via AgentState, allowing tests to bypass Tauri State.
 #[cfg(test)]
 pub(crate) async fn clear_task_history_for_state(state: &AgentState) -> Result<(), String> {
     state.logs.lock().await.clear();
@@ -319,7 +319,7 @@ pub(crate) async fn clear_task_history_for_state(state: &AgentState) -> Result<(
     store.clear().map_err(|error| error.to_string())
 }
 
-/// 使用当前 Agent 默认打印设置提交一张校准测试页。
+/// Submit a calibration test page using current Agent default print settings.
 #[tauri::command]
 pub async fn print_test(
     config: AgentConfig,
@@ -329,7 +329,7 @@ pub async fn print_test(
     Ok(())
 }
 
-/// 返回系统打印机列表。
+/// Return list of system printers.
 #[tauri::command]
 pub async fn list_printers(
     service: State<'_, Arc<CommandService>>,
@@ -340,7 +340,7 @@ pub async fn list_printers(
     }
 }
 
-/// 返回指定打印机支持的纸张。
+/// Return papers supported by specified printer.
 #[tauri::command]
 pub async fn list_papers(
     printer_name: String,

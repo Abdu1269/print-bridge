@@ -1,5 +1,11 @@
 # 部署
 
+<div align="right">
+
+[English](./deployment_en.md)
+
+</div>
+
 ## 桌面版
 
 Windows、macOS 和 Linux GUI 安装包提供 `print-bridge-desktop` 软件包及 `print-bridge` 可执行文件。无参数启动 GUI。桌面产品不支持 `serve`。

@@ -2,7 +2,7 @@ use crate::protocol::{validate_html_file_url, PrintJobInput, SupportedFormat};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// 远程任务服务下发给 Agent 的任务消息。
+/// Task message dispatched by remote task service to Agent.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum RemoteTask {
@@ -20,7 +20,7 @@ pub enum RemoteTask {
     },
 }
 
-/// 远程任务响应无法解析时返回的错误。
+/// Error returned when remote task response cannot be parsed.
 #[derive(Debug, Error)]
 pub enum RemoteProtocolError {
     #[error("invalid remote task response")]
@@ -29,7 +29,7 @@ pub enum RemoteProtocolError {
     InvalidMessage(String),
 }
 
-/// 解析远程任务响应，兼容单个任务、数组、空响应和 null。
+/// Parse remote task response, accepting single task, array, empty response, or null.
 pub fn parse_remote_tasks(input: &str) -> Result<Vec<RemoteTask>, RemoteProtocolError> {
     if input.trim().is_empty() {
         return Ok(Vec::new());
@@ -52,7 +52,7 @@ pub fn parse_remote_tasks(input: &str) -> Result<Vec<RemoteTask>, RemoteProtocol
     Ok(vec![task])
 }
 
-/// 在远程任务入队前拒绝无法被安全 HTML 渲染器加载的 URL。
+/// Reject URLs that cannot be safely loaded by HTML renderer before enqueueing remote tasks.
 fn validate_html_sources(tasks: &[RemoteTask]) -> Result<(), RemoteProtocolError> {
     for task in tasks {
         let jobs: &[PrintJobInput] = match task {

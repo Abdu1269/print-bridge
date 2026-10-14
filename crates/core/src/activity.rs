@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::protocol::JobStatus;
 
-/// 一条本地保存并通过 WebSocket 广播的任务状态记录。
+/// Task status record saved locally and broadcast via WebSocket.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskLogEntry {
     pub timestamp: String,
@@ -14,7 +14,7 @@ pub struct TaskLogEntry {
     pub message: String,
 }
 
-/// 本地任务历史记录中的任务状态。
+/// Task status in local task history records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskHistoryStatus {
@@ -29,7 +29,7 @@ pub enum TaskHistoryStatus {
 }
 
 impl TaskHistoryStatus {
-    /// 返回持久化时使用的状态字符串。
+    /// Return status string used for persistence.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Queued => "queued",
@@ -43,7 +43,7 @@ impl TaskHistoryStatus {
         }
     }
 
-    /// 从持久化字符串恢复状态。
+    /// Restore status from persisted string.
     pub fn from_storage_str(value: &str) -> Option<Self> {
         match value {
             "queued" => Some(Self::Queued),
@@ -58,7 +58,7 @@ impl TaskHistoryStatus {
         }
     }
 
-    /// 返回该状态是否结束任务生命周期。
+    /// Return whether this status concludes the task lifecycle.
     pub fn is_terminal(self) -> bool {
         matches!(
             self,
@@ -67,7 +67,7 @@ impl TaskHistoryStatus {
     }
 }
 
-/// 本地任务历史记录中的任务来源。
+/// Task source in local task history records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskHistorySource {
@@ -77,7 +77,7 @@ pub enum TaskHistorySource {
 }
 
 impl TaskHistorySource {
-    /// 返回持久化时使用的来源字符串。
+    /// Return source string used for persistence.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::WebSocket => "web_socket",
@@ -86,7 +86,7 @@ impl TaskHistorySource {
         }
     }
 
-    /// 从持久化字符串恢复来源。
+    /// Restore source from persisted string.
     pub fn from_storage_str(value: &str) -> Option<Self> {
         match value {
             "web_socket" => Some(Self::WebSocket),
@@ -97,7 +97,7 @@ impl TaskHistorySource {
     }
 }
 
-/// 任务历史列表中的单个任务摘要。
+/// Individual task summary in task history list.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskHistoryJob {
     pub job_id: String,
@@ -114,7 +114,7 @@ pub struct TaskHistoryJob {
     pub finished_at: Option<String>,
 }
 
-/// 任务历史中的单个状态事件。
+/// Individual status event in task history.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskHistoryEvent {
     pub id: i64,

@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// 验证 headless 系统用户运行打印和文档转换所需的外部程序。
+/// Verify external executables required by headless system user for printing and document conversion.
 pub fn preflight() -> Result<(), String> {
     for program in ["lp", "lpstat", "lpoptions"] {
         require_any(&[program], program, "install cups-client")?;

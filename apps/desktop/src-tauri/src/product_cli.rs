@@ -7,14 +7,14 @@ use print_bridge_cli::{
 };
 use print_bridge_core::config::{AgentConfig, UiLanguage};
 
-/// Desktop 产品的系统集成 CLI 适配器。
+/// System integration CLI adapter for the Desktop product.
 pub struct DesktopProductCommandAdapter {
     service: Arc<CommandService>,
     autostart: AutoLaunch,
 }
 
 impl DesktopProductCommandAdapter {
-    /// 使用当前桌面可执行文件创建产品适配器。
+    /// Create product adapter using the current desktop executable.
     pub fn new(service: Arc<CommandService>) -> Result<Self, CommandError> {
         let executable = desktop_executable_path().map_err(runtime_error)?;
         let mut builder = AutoLaunchBuilder::new();

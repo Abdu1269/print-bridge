@@ -6,7 +6,7 @@ pub(super) enum BufferRead {
     Failed(String),
 }
 
-/// 用显式字节容量读取 Win32 可变长度结构，允许数据在查询期间增长。
+/// Read Win32 variable-length structures with explicit byte capacity, allowing data to grow during query.
 pub(super) fn read_buffer(
     command: &str,
     mut query: impl FnMut(&mut [u64]) -> BufferRead,

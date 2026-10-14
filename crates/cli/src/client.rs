@@ -13,7 +13,7 @@ use async_trait::async_trait;
 pub const IPC_PROTOCOL_VERSION: u16 = 1;
 pub const MAX_IPC_FRAME_BYTES: usize = 8 * 1024 * 1024;
 
-/// 本地 IPC 命令请求。
+/// Local IPC command request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandRequest {
     pub protocol_version: u16,
@@ -21,7 +21,7 @@ pub struct CommandRequest {
     pub command: Command,
 }
 
-/// 本地 IPC 命令响应。
+/// Local IPC command response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandResponse {
     pub protocol_version: u16,
@@ -29,10 +29,10 @@ pub struct CommandResponse {
     pub result: Result<CommandResult, CommandError>,
 }
 
-/// 通过本机 socket 或命名管道调用运行中的 Agent。
+/// Invoke running Agent via local socket or named pipe.
 pub struct LocalCommandClient;
 
-/// 把本地 IPC client 适配为 CommandService 的在线 executor。
+/// Adapt local IPC client as online executor for CommandService.
 pub struct LocalClientExecutor {
     path: PathBuf,
 }
@@ -51,7 +51,7 @@ impl CommandExecutor for LocalClientExecutor {
 }
 
 impl LocalCommandClient {
-    /// 向 Unix socket 发送单个命令。
+    /// Send a single command to Unix socket.
     #[cfg(unix)]
     pub async fn execute(path: &Path, command: Command) -> Result<CommandResult, CommandError> {
         let mut stream = match tokio::net::UnixStream::connect(path).await {
@@ -78,7 +78,7 @@ impl LocalCommandClient {
         exchange(&mut stream, command).await
     }
 
-    /// 通过 Windows 命名管道发送单个命令。
+    /// Send a single command via Windows named pipe.
     #[cfg(windows)]
     pub async fn execute(path: &Path, command: Command) -> Result<CommandResult, CommandError> {
         use tokio::net::windows::named_pipe::ClientOptions;
@@ -126,7 +126,7 @@ where
     response.result
 }
 
-/// 写入长度前缀帧。
+/// Write length-prefixed frame.
 pub async fn write_frame<W: AsyncWriteExt + Unpin>(
     writer: &mut W,
     payload: &[u8],
@@ -147,7 +147,7 @@ pub async fn write_frame<W: AsyncWriteExt + Unpin>(
         .map_err(|error| CommandError::new(CommandErrorKind::Runtime, error.to_string()))
 }
 
-/// 读取长度前缀帧。
+/// Read length-prefixed frame.
 pub async fn read_frame<R: AsyncReadExt + Unpin>(reader: &mut R) -> Result<Vec<u8>, CommandError> {
     let len = reader
         .read_u32()

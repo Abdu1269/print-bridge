@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{config_transfer::ExportConfigOptions, CommandPolicy, ProductKind};
 
-/// 可由 CLI、桌面 IPC 或本地 Agent IPC 执行的功能命令。
+/// Functional commands executable via CLI, desktop IPC, or local Agent IPC.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "command", content = "payload", rename_all = "snake_case")]
 pub enum Command {
@@ -51,7 +51,7 @@ pub enum Command {
 }
 
 impl Command {
-    /// 返回命令对运行中 Agent 的依赖策略。
+    /// Return dependency policy of command on running Agent.
     pub fn policy(&self) -> CommandPolicy {
         match self {
             Self::GetLogs

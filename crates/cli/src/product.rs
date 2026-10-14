@@ -2,33 +2,33 @@ use async_trait::async_trait;
 
 use crate::{CommandError, CommandErrorKind, ProductKind};
 
-/// 由具体产品实现的桌面集成能力。
-// async-trait 0.1.89 为 Future 返回值生成 #[must_use]，触发 Rust 1.99 的重复属性检查。
+/// Desktop integration capabilities implemented by specific products.
+// async-trait 0.1.89 generates #[must_use] for Future return values, triggering duplicate attribute checks on Rust 1.99.
 #[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait ProductCommandAdapter: Send + Sync {
-    /// 返回当前可执行文件的产品类型。
+    /// Return product type of current executable.
     fn product_kind(&self) -> ProductKind {
         ProductKind::Desktop
     }
-    /// 返回当前是否启用开机自启动。
+    /// Return whether system autostart is currently enabled.
     async fn autostart_status(&self) -> Result<bool, CommandError>;
 
-    /// 启用或禁用开机自启动。
+    /// Enable or disable system autostart.
     async fn set_autostart(&self, enabled: bool) -> Result<(), CommandError>;
 
-    /// 设置桌面应用语言。
+    /// Set desktop application UI language.
     async fn set_language(&self, language: &str) -> Result<(), CommandError>;
 }
 
-/// 对不支持桌面集成能力的产品返回稳定错误。
+/// Return stable error for products that do not support desktop integration capabilities.
 pub struct UnsupportedProductCommandAdapter {
     reason: &'static str,
     kind: ProductKind,
 }
 
 impl UnsupportedProductCommandAdapter {
-    /// 创建不支持产品能力的适配器。
+    /// Create adapter for unsupported product capabilities.
     pub fn new(reason: &'static str) -> Self {
         Self {
             reason,
@@ -36,7 +36,7 @@ impl UnsupportedProductCommandAdapter {
         }
     }
 
-    /// 创建 Headless 产品的不支持适配器。
+    /// Create unsupported adapter for Headless product.
     pub fn headless(reason: &'static str) -> Self {
         Self {
             reason,

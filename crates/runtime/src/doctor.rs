@@ -16,7 +16,7 @@ use crate::{
     state::AgentState,
 };
 
-/// 执行不产生业务副作用的本地环境检查。
+/// Run read-only local environment checks without business side effects.
 pub async fn run_doctor(
     state: &AgentState,
     listen_addr: SocketAddr,
@@ -167,7 +167,7 @@ fn printer_check(state: &AgentState) -> DoctorCheck {
     }
 }
 
-/// 把 HTML 打印使用的浏览器探测结果转换为诊断项。
+/// Convert browser detection results used by HTML printing into a diagnostic check.
 fn browser_check(result: Result<BrowserExecutable, HtmlRenderError>) -> DoctorCheck {
     match result {
         Ok(browser) => check(
@@ -185,7 +185,7 @@ fn browser_check(result: Result<BrowserExecutable, HtmlRenderError>) -> DoctorCh
     }
 }
 
-/// 返回 DOCX、XLSX、PPTX 各自的被动 Office 转换器检查。
+/// Return passive Office converter checks for DOCX, XLSX, and PPTX formats.
 fn office_checks() -> Vec<DoctorCheck> {
     [
         ("office.docx", OfficeFormat::Docx),
@@ -197,7 +197,7 @@ fn office_checks() -> Vec<DoctorCheck> {
     .collect()
 }
 
-/// 汇总一个 Office 格式的候选顺序和首个被动探测结果。
+/// Summarize candidate order and first passive detection result for an Office format.
 fn office_check(code: &str, candidates: &[OfficeCandidateStatus]) -> DoctorCheck {
     let chain = candidates
         .iter()

@@ -27,7 +27,7 @@ const ARGON2_ITERATIONS: u32 = 2;
 const ARGON2_PARALLELISM: u32 = 1;
 const GCM_TAG_BYTES: u8 = 16;
 
-/// 导出配置时各配置项是否包含在文件中的选项。
+/// Options determining which configuration items are included when exporting configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportConfigOptions {
     pub service_port: bool,
@@ -41,7 +41,7 @@ pub struct ExportConfigOptions {
 }
 
 impl ExportConfigOptions {
-    /// 返回包含所有可导出配置项的默认选项。
+    /// Return default options containing all exportable configuration items.
     pub fn all() -> Self {
         Self {
             service_port: true,
@@ -56,7 +56,7 @@ impl ExportConfigOptions {
     }
 }
 
-/// 加密配置文件在磁盘上的外层结构。
+/// On-disk outer envelope structure for encrypted configuration files.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncryptedConfigFile {
     pub format: String,
@@ -65,7 +65,7 @@ pub struct EncryptedConfigFile {
     pub payload: String,
 }
 
-/// 加密配置文件使用的 KDF 和加密算法参数。
+/// KDF and cipher parameters used by encrypted configuration files.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CryptoMetadata {
     pub kdf: String,
@@ -78,7 +78,7 @@ pub struct CryptoMetadata {
     pub nonce: String,
 }
 
-/// 加密前的 PrintBridge 配置迁移载荷。
+/// Unencrypted PrintBridge configuration transfer payload.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConfigTransferPayload {
     pub format: String,
@@ -86,7 +86,7 @@ pub struct ConfigTransferPayload {
     pub config: PartialTransferConfig,
 }
 
-/// 配置迁移载荷中按模块拆分的可选配置。
+/// Modular optional configuration sections in configuration transfer payload.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartialTransferConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -97,14 +97,14 @@ pub struct PartialTransferConfig {
     pub remote: Option<PartialRemoteTransferConfig>,
 }
 
-/// 配置迁移载荷中的本地服务设置。
+/// Local service settings in configuration transfer payload.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartialServiceTransferConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
 }
 
-/// 配置迁移载荷中的安全白名单设置。
+/// Security allowlist settings in configuration transfer payload.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartialSecurityTransferConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -113,7 +113,7 @@ pub struct PartialSecurityTransferConfig {
     pub allowed_ips: Option<Vec<String>>,
 }
 
-/// 配置迁移载荷中的远程任务设置。
+/// Remote task settings in configuration transfer payload.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartialRemoteTransferConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -136,14 +136,14 @@ pub struct PartialRemoteTransferConfig {
     pub max_report_retries: Option<u32>,
 }
 
-/// 导入配置前展示给前端的差异预览。
+/// Diff preview displayed to frontend before importing configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImportPreview {
     pub file_hash: String,
     pub items: Vec<ImportPreviewItem>,
 }
 
-/// 导入预览中的单个配置项变化。
+/// Individual configuration change item in import preview.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImportPreviewItem {
     pub key: String,
@@ -152,7 +152,7 @@ pub struct ImportPreviewItem {
     pub next: String,
 }
 
-/// 配置导入导出过程中的错误。
+/// Errors occurring during configuration export and import.
 #[derive(Debug, Error)]
 pub enum ConfigTransferError {
     #[error("不是有效的 PrintBridge 配置文件")]
@@ -171,7 +171,7 @@ impl From<io::Error> for ConfigTransferError {
     }
 }
 
-/// 把加密配置文件写入指定路径。
+/// Write encrypted configuration file to specified path.
 pub fn write_encrypted_file(
     path: &Path,
     file: &EncryptedConfigFile,
@@ -181,13 +181,13 @@ pub fn write_encrypted_file(
     Ok(())
 }
 
-/// 从指定路径读取加密配置文件。
+/// Read encrypted configuration file from specified path.
 pub fn read_encrypted_file(path: &Path) -> Result<EncryptedConfigFile, ConfigTransferError> {
     let (file, _) = read_encrypted_file_with_hash(path)?;
     Ok(file)
 }
 
-/// 读取加密配置文件，并返回文件内容哈希用于导入确认。
+/// Read encrypted configuration file and return content hash for import confirmation.
 pub fn read_encrypted_file_with_hash(
     path: &Path,
 ) -> Result<(EncryptedConfigFile, String), ConfigTransferError> {
@@ -211,7 +211,7 @@ fn sha256_hex(content: &[u8]) -> String {
 mod double_option {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    /// 序列化可区分“未选择”和“选择为空值”的嵌套 Option。
+    /// Serialize nested Option distinguishing between omitted and explicit null.
     pub fn serialize<S, T>(value: &Option<Option<T>>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -223,7 +223,7 @@ mod double_option {
         }
     }
 
-    /// 反序列化可区分“未选择”和“选择为空值”的嵌套 Option。
+    /// Deserialize nested Option distinguishing between omitted and explicit null.
     pub fn deserialize<'de, D, T>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
     where
         D: Deserializer<'de>,
@@ -233,7 +233,7 @@ mod double_option {
     }
 }
 
-/// 根据导出选项从完整配置构建迁移载荷。
+/// Construct transfer payload from full configuration according to export options.
 pub fn build_transfer_payload(
     config: &AgentConfig,
     options: &ExportConfigOptions,
@@ -299,7 +299,7 @@ fn build_remote_transfer(
     }
 }
 
-/// 使用密码把配置迁移载荷加密为可保存文件。
+/// Encrypt configuration transfer payload into saveable file using password.
 pub fn encrypt_payload(
     payload: &ConfigTransferPayload,
     password: &str,
@@ -334,7 +334,7 @@ pub fn encrypt_payload(
     })
 }
 
-/// 使用密码解密配置文件并校验载荷格式。
+/// Decrypt configuration file using password and validate payload format.
 pub fn decrypt_payload(
     file: &EncryptedConfigFile,
     password: &str,
@@ -360,7 +360,7 @@ pub fn decrypt_payload(
     Ok(payload)
 }
 
-/// 把导入载荷合并到当前配置，并校验字段合法性。
+/// Merge import payload into current configuration and validate field validity.
 pub fn merge_payload(
     current: &AgentConfig,
     payload: &ConfigTransferPayload,
@@ -437,7 +437,7 @@ pub fn merge_payload(
     Ok(next.normalized())
 }
 
-/// 生成导入载荷对当前配置的变更预览。
+/// Generate change preview of import payload against current configuration.
 pub fn preview_payload(
     current: &AgentConfig,
     payload: &ConfigTransferPayload,

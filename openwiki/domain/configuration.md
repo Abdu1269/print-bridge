@@ -1,5 +1,11 @@
 # 配置
 
+<div align="right">
+
+[English](./configuration_en.md)
+
+</div>
+
 PrintBridge 将所有设置存储在单个 JSON 配置文件中，由 GUI、CLI、headless `serve`、远程 worker 和配置导入/导出共享。同一个文件是唯一的真相来源——CLI 命令直接修改它，GUI 通过 Tauri 命令读写它。
 
 ## 配置结构

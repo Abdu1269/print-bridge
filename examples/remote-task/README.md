@@ -1,5 +1,11 @@
 # Remote task examples
 
+<div align="right">
+
+[English](./README_en.md)
+
+</div>
+
 这里放的是 PrintBridge 远程任务轮询的服务端示例。它们模拟业务服务器，给 PrintBridge 提供同一个远程任务接口：
 
 ```text

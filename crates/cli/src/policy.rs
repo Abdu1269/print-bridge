@@ -1,4 +1,4 @@
-/// 命令应当在线执行还是允许直接访问本地状态。
+/// Whether a command must be executed online or is permitted to directly access local state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommandPolicy {
     OnlineOnly,

@@ -174,7 +174,7 @@ try {
 } catch {}
 "#;
 
-/// 按 Microsoft Office、WPS Office、LibreOffice 的顺序转换 Office 文件。
+/// Convert Office file in order of Microsoft Office, WPS Office, and LibreOffice.
 pub(super) async fn convert(
     input_path: &Path,
     format: OfficeFormat,
@@ -208,7 +208,7 @@ pub(super) async fn convert(
     }
 }
 
-/// 返回 doctor 使用的被动转换器探测结果，不启动任何 Office 应用。
+/// Return passive converter detection result used by doctor without launching Office applications.
 pub(super) fn candidate_statuses(format: OfficeFormat) -> Vec<OfficeCandidateStatus> {
     vec![
         OfficeCandidateStatus {
@@ -226,7 +226,7 @@ pub(super) fn candidate_statuses(format: OfficeFormat) -> Vec<OfficeCandidateSta
     ]
 }
 
-/// 使用指定的 Windows Office COM 提供方执行一次转换。
+/// Perform conversion using specified Windows Office COM provider.
 async fn convert_with_provider(
     input_path: &Path,
     format: OfficeFormat,
@@ -251,7 +251,7 @@ async fn convert_with_provider(
     Ok(converter)
 }
 
-/// 给后续转换失败附加此前不可用的候选信息。
+/// Attach previously unavailable candidate information to subsequent conversion failure.
 fn with_unavailable_context(
     error: OfficeConvertError,
     unavailable: &[String],
@@ -266,7 +266,7 @@ fn with_unavailable_context(
     }
 }
 
-/// 返回指定提供方和格式的显示名称。
+/// Return display name for specified provider and format.
 fn converter_name(provider: Provider, format: OfficeFormat) -> &'static str {
     match (provider, format) {
         (Provider::Microsoft, OfficeFormat::Docx) => "Microsoft Word",
@@ -278,7 +278,7 @@ fn converter_name(provider: Provider, format: OfficeFormat) -> &'static str {
     }
 }
 
-/// 返回指定提供方和格式的 COM ProgID。
+/// Return COM ProgID for specified provider and format.
 fn prog_id(provider: Provider, format: OfficeFormat) -> &'static str {
     match (provider, format) {
         (Provider::Microsoft, OfficeFormat::Docx) => "Word.Application",
@@ -290,7 +290,7 @@ fn prog_id(provider: Provider, format: OfficeFormat) -> &'static str {
     }
 }
 
-/// 返回传给 PowerShell 的提供方名称。
+/// Return provider name passed to PowerShell.
 fn provider_name(provider: Provider) -> &'static str {
     match provider {
         Provider::Microsoft => "microsoft",
@@ -298,7 +298,7 @@ fn provider_name(provider: Provider) -> &'static str {
     }
 }
 
-/// 返回传给 PowerShell 的 Office 格式名称。
+/// Return Office format name passed to PowerShell.
 fn format_name(format: OfficeFormat) -> &'static str {
     match format {
         OfficeFormat::Docx => "docx",
@@ -307,12 +307,12 @@ fn format_name(format: OfficeFormat) -> &'static str {
     }
 }
 
-/// 返回当前暂存输入和提供方对应的实例所有权记录路径。
+/// Return instance ownership record path corresponding to current staged input and provider.
 fn instance_record_path(input_path: &Path, provider: Provider) -> PathBuf {
     input_path.with_extension(format!("{}-instance.json", provider_name(provider)))
 }
 
-/// 构造通过环境变量传递路径的非交互 PowerShell 命令。
+/// Construct non-interactive PowerShell command passing paths via environment variables.
 fn build_command(
     input_path: &Path,
     format: OfficeFormat,
@@ -335,7 +335,7 @@ fn build_command(
     command
 }
 
-/// 构造仅清理已记录 Office 实例的非交互 PowerShell 命令。
+/// Construct non-interactive PowerShell command that only cleans up recorded Office instances.
 fn build_cleanup_command(record_path: &Path) -> Command {
     let mut command = hidden_command("powershell.exe");
     command.args([
@@ -348,14 +348,14 @@ fn build_cleanup_command(record_path: &Path) -> Command {
     command
 }
 
-/// 创建不打开独立控制台窗口的 Windows 子进程。
+/// Create Windows child process without spawning detached console window.
 fn hidden_command(program: impl AsRef<OsStr>) -> Command {
     let mut command = Command::new(program);
     command.creation_flags(CREATE_NO_WINDOW);
     command
 }
 
-/// 被动检查 COM ProgID 是否已注册。
+/// Passively check whether COM ProgID is registered.
 fn is_com_registered(prog_id: &str) -> bool {
     use std::os::windows::process::CommandExt;
 
@@ -368,7 +368,7 @@ fn is_com_registered(prog_id: &str) -> bool {
     command.output().is_ok_and(|output| output.status.success())
 }
 
-/// 把 PowerShell 约定的不可用退出码映射为领域错误。
+/// Map PowerShell unavailable exit code convention to domain error.
 fn failure_from_exit(
     code: Option<i32>,
     converter: &'static str,
@@ -388,7 +388,7 @@ fn failure_from_exit(
     Some(OfficeConvertError::ConverterUnavailable { converter, reason })
 }
 
-/// 保留 PowerShell 真实错误输出并映射失败类型。
+/// Preserve actual PowerShell error output and map failure type.
 fn failure_from_output(output: &Output, converter: &'static str) -> OfficeConvertError {
     if let Some(error) = failure_from_exit(output.status.code(), converter, &output.stderr) {
         return error;

@@ -8,13 +8,13 @@ use serde::Serialize;
 use thiserror::Error;
 use uuid::Uuid;
 
-/// 负责和远程任务服务通信的 HTTP 客户端。
+/// HTTP client responsible for communicating with remote task service.
 #[derive(Debug, Clone)]
 pub struct RemoteClient {
     client: reqwest::Client,
 }
 
-/// 远程任务服务请求或协议解析失败时返回的错误。
+/// Errors returned on remote task service request or protocol parsing failure.
 #[derive(Debug, Error)]
 pub enum RemoteClientError {
     #[error("remote endpoint url is missing")]
@@ -38,7 +38,7 @@ impl Default for RemoteClient {
 }
 
 impl RemoteClient {
-    /// 从远程任务服务拉取待处理任务。
+    /// Fetch pending tasks from remote task service.
     pub async fn fetch_tasks(
         &self,
         config: &RemoteConfig,
@@ -58,7 +58,7 @@ impl RemoteClient {
         parse_remote_tasks(&response.text().await?).map_err(RemoteClientError::Protocol)
     }
 
-    /// 向远程任务服务回报单个任务状态事件。
+    /// Report single task status event back to remote task service.
     pub async fn report_status(
         &self,
         config: &RemoteConfig,
@@ -77,7 +77,7 @@ impl RemoteClient {
         }
     }
 
-    /// 使用当前远程配置执行连接探测。
+    /// Perform connection probe using current remote configuration.
     pub async fn test_connection(&self, config: &RemoteConfig) -> Result<(), RemoteClientError> {
         let url = endpoint_url(config)?;
         let get_response = with_common_headers(self.client.get(url.clone()), config, true)
@@ -104,7 +104,7 @@ impl RemoteClient {
 }
 
 impl RemoteClientError {
-    /// 判断错误是否表示远程配置需要用户修正。
+    /// Determine whether error indicates remote configuration requires user correction.
     pub fn is_configuration_status(&self) -> bool {
         matches!(self, Self::HttpStatus(401 | 403 | 404))
     }

@@ -13,12 +13,12 @@ use tokio::net::{UnixListener, UnixStream};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
-/// 返回 runtime 目录内稳定的 Agent socket 路径。
+/// Return stable Agent socket path within runtime directory.
 pub fn socket_path(runtime_dir: &Path) -> PathBuf {
     runtime_dir.join("agent.sock")
 }
 
-/// 监听本地 Unix socket，直到 runtime 发出取消信号。
+/// Listen on local Unix socket until runtime emits cancellation signal.
 pub async fn serve_until(
     path: PathBuf,
     executor: Arc<dyn CommandExecutor>,
@@ -51,7 +51,7 @@ pub async fn serve_until(
     }
 }
 
-/// 同步完成 socket 绑定后再启动后台服务，确保启动错误可直接返回。
+/// Synchronously complete socket bind before launching background service, ensuring startup errors return immediately.
 pub fn bind_and_spawn(
     path: PathBuf,
     executor: Arc<dyn CommandExecutor>,

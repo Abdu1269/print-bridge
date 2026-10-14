@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config_transfer::ImportPreview;
 
-/// 命令失败的稳定分类。
+/// Stable categories for command failures.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CommandErrorKind {
@@ -21,7 +21,7 @@ pub enum CommandErrorKind {
     Unsupported,
 }
 
-/// 可跨 CLI 与 IPC 边界传递的命令错误。
+/// Command errors passable across CLI and IPC boundaries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CommandError {
     pub kind: CommandErrorKind,
@@ -29,7 +29,7 @@ pub struct CommandError {
 }
 
 impl CommandError {
-    /// 创建带稳定分类的命令错误。
+    /// Create command error with stable categorization.
     pub fn new(kind: CommandErrorKind, message: impl Into<String>) -> Self {
         Self {
             kind,
@@ -37,7 +37,7 @@ impl CommandError {
         }
     }
 
-    /// 返回功能 CLI 使用的稳定进程退出码。
+    /// Return stable process exit code used by functional CLI.
     pub fn exit_code(&self) -> i32 {
         match self.kind {
             CommandErrorKind::InvalidInput => 2,
@@ -57,14 +57,14 @@ impl std::fmt::Display for CommandError {
 
 impl std::error::Error for CommandError {}
 
-/// Agent 运行状态。
+/// Agent running status.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentStatus {
     pub running: bool,
     pub listen_addr: Option<SocketAddr>,
 }
 
-/// 提供 CLI 的产品类型。
+/// Product type providing the CLI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProductKind {
@@ -72,7 +72,7 @@ pub enum ProductKind {
     Headless,
 }
 
-/// 单项 Doctor 检查状态。
+/// Status of individual Doctor check.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum DoctorStatus {
@@ -81,7 +81,7 @@ pub enum DoctorStatus {
     Fail,
 }
 
-/// Doctor 的单项只读检查结果。
+/// Result of single read-only Doctor check.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DoctorCheck {
     pub code: String,
@@ -91,7 +91,7 @@ pub struct DoctorCheck {
     pub suggestion: Option<String>,
 }
 
-/// Doctor 汇总计数。
+/// Aggregate counts for Doctor checks.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DoctorSummary {
     pub pass: usize,
@@ -99,7 +99,7 @@ pub struct DoctorSummary {
     pub fail: usize,
 }
 
-/// Doctor 的稳定结构化报告。
+/// Stable structured report for Doctor diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DoctorReport {
     pub checks: Vec<DoctorCheck>,
@@ -107,7 +107,7 @@ pub struct DoctorReport {
 }
 
 impl DoctorReport {
-    /// 从检查项计算汇总。
+    /// Calculate summary counts from check items.
     pub fn new(checks: Vec<DoctorCheck>) -> Self {
         let mut summary = DoctorSummary {
             pass: 0,
@@ -125,7 +125,7 @@ impl DoctorReport {
     }
 }
 
-/// 功能命令的结构化结果。
+/// Structured result of functional commands.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "result", content = "payload", rename_all = "snake_case")]
 pub enum CommandResult {

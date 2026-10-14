@@ -11,7 +11,7 @@ use thiserror::Error;
 const HEADER_SIZE: usize = 8;
 const DEFAULT_DPI: f32 = 203.0;
 
-/// Agent 在打印前可以校验或规范化的文档格式。
+/// Document formats that Agent can validate or normalize prior to printing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DocumentFormat {
     Pdf,
@@ -19,7 +19,7 @@ pub enum DocumentFormat {
     Jpeg,
 }
 
-/// 用于把图片放入目标纸张尺寸内的矩形区域。
+/// Rectangular placement area used to fit an image within target paper dimensions.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FitRect {
     pub x: f64,
@@ -28,7 +28,7 @@ pub struct FitRect {
     pub height: f64,
 }
 
-/// 检测或规范化可打印文档时返回的错误。
+/// Errors returned when detecting or normalizing printable documents.
 #[derive(Debug, Error)]
 pub enum DocumentError {
     #[error("unsupported document format")]
@@ -41,10 +41,10 @@ pub enum DocumentError {
     Image(#[from] image::ImageError),
 }
 
-/// 文档检测和 PDF 生成的统一返回结果。
+/// Unified result type for document detection and PDF generation.
 pub type DocumentResult<T> = Result<T, DocumentError>;
 
-/// 根据文件开头字节检测文档格式。
+/// Detect document format based on leading magic bytes.
 pub fn detect_format_from_bytes(bytes: &[u8]) -> Option<DocumentFormat> {
     if bytes.starts_with(b"%PDF-") {
         Some(DocumentFormat::Pdf)
@@ -57,7 +57,7 @@ pub fn detect_format_from_bytes(bytes: &[u8]) -> Option<DocumentFormat> {
     }
 }
 
-/// 只读取文件签名头来检测文件格式。
+/// Detect file format by reading only the signature header.
 pub fn detect_format(path: &Path) -> DocumentResult<Option<DocumentFormat>> {
     let mut header = [0_u8; HEADER_SIZE];
     let bytes_read = fs::File::open(path)?.read(&mut header)?;
@@ -65,7 +65,7 @@ pub fn detect_format(path: &Path) -> DocumentResult<Option<DocumentFormat>> {
     Ok(detect_format_from_bytes(&header[..bytes_read]))
 }
 
-/// 计算图片在页面中居中且完整包含的排版矩形。
+/// Calculate centered layout rectangle that fully fits image within the page.
 pub fn fit_contain(
     image_width: f64,
     image_height: f64,
@@ -92,7 +92,7 @@ pub fn fit_contain(
     })
 }
 
-/// 把 PNG 或 JPEG 转成匹配目标纸张的一页 PDF。
+/// Convert PNG or JPEG into a single-page PDF matching target paper dimensions.
 pub fn image_to_pdf(
     image_path: &Path,
     paper: &EffectivePaper,
@@ -124,8 +124,8 @@ pub fn image_to_pdf(
     )?;
     let raw_image = raw_image_from_dynamic_image(image);
 
-    // PDF 打印坐标使用物理单位，所以先把图片像素映射到稳定的
-    // 标签打印机 DPI，再缩放进计算好的排版矩形。
+    // PDF print coordinates use physical units, so image pixels are first mapped to stable
+    // label printer DPI, then scaled into the calculated layout rectangle.
     let mut doc = PdfDocument::new("print-bridge-document");
     let image_id = doc.add_image(&raw_image);
     let natural_width_mm = image_width as f64 * 25.4 / f64::from(DEFAULT_DPI);
@@ -155,7 +155,7 @@ pub fn image_to_pdf(
     Ok(())
 }
 
-/// 生成用于检查标签偏移和缩放的矢量校准测试页。
+/// Generate vector calibration test page for verifying label offset and scaling.
 pub fn calibration_page_to_pdf(paper: &EffectivePaper, output_path: &Path) -> DocumentResult<()> {
     paper
         .validate()
@@ -178,7 +178,7 @@ pub fn calibration_page_to_pdf(paper: &EffectivePaper, output_path: &Path) -> Do
     Ok(())
 }
 
-/// 构造校准页的边框、中心线和尺寸标记。
+/// Construct calibration page borders, centerlines, and dimension markers.
 fn calibration_page_ops(paper: &EffectivePaper) -> Vec<Op> {
     let min_side = paper.width_mm.min(paper.height_mm);
     let margin = (min_side * 0.08).clamp(0.2, 4.0).min(min_side / 3.0);
@@ -286,12 +286,12 @@ fn format_mm_label(value: f64) -> String {
     }
 }
 
-/// 把毫米转换为 printpdf 变换所需的 PDF 点。
+/// Convert millimeters to PDF points required by printpdf transformations.
 fn mm_to_pt(value: f64) -> Pt {
     Mm(value as f32).into()
 }
 
-/// 把图片转换为 printpdf 需要的 RGB 原始图片格式。
+/// Convert image into raw RGB format required by printpdf.
 fn raw_image_from_dynamic_image(image: DynamicImage) -> RawImage {
     let (width, height, pixels) = flatten_to_white(image);
 
@@ -304,7 +304,7 @@ fn raw_image_from_dynamic_image(image: DynamicImage) -> RawImage {
     }
 }
 
-/// 把透明度合成到白底上，保证透明标签打印结果可预期。
+/// Composite alpha transparency over white background to ensure predictable label output.
 fn flatten_to_white(image: DynamicImage) -> (u32, u32, Vec<u8>) {
     let rgba = image.to_rgba8();
     let (width, height) = rgba.dimensions();
@@ -321,12 +321,12 @@ fn flatten_to_white(image: DynamicImage) -> (u32, u32, Vec<u8>) {
     (width, height, rgb.into_raw())
 }
 
-/// 把单个颜色通道与白色背景混合。
+/// Blend an individual color channel with white background.
 fn blend_channel(channel: u8, alpha: f32) -> u8 {
     (f32::from(channel) * alpha + 255.0 * (1.0 - alpha)).round() as u8
 }
 
-/// 检查尺寸是否能安全参与布局计算。
+/// Check whether dimensions can safely participate in layout calculations.
 fn is_positive_finite(value: f64) -> bool {
     value.is_finite() && value > 0.0
 }
@@ -354,8 +354,8 @@ mod tests {
 
             assert_eq!(doc.pages.len(), 1);
             let page = &doc.pages[0];
-            // SumatraPDF 用 MediaBox 选纸，必须保留实际宽高而不是只打印尺寸文字。
-            // printpdf 将 MediaBox 四舍五入为整数 pt，允许半个 pt 的序列化误差。
+            // SumatraPDF uses MediaBox for paper selection; actual dimensions must be retained instead of just printing dimension text.
+            // printpdf rounds MediaBox to integer pt, allowing up to 0.5 pt serialization tolerance.
             assert!(
                 (f64::from(page.media_box.width.0) - width_mm * 72.0 / 25.4).abs() < 0.51,
                 "width: {} pt for {width_mm} mm",

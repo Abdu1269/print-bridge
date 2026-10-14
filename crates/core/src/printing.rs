@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use thiserror::Error;
 
-/// 平台后端返回的打印机摘要。
+/// Printer summary returned by platform backend.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrinterInfo {
     pub name: String,
@@ -15,7 +15,7 @@ pub struct PrinterInfo {
 }
 
 impl PrinterInfo {
-    /// 构造只有名称和默认状态的摘要，未知平台字段保持为空。
+    /// Construct summary with only name and default status, leaving unknown platform fields empty.
     pub fn new(name: String, is_default: bool) -> Self {
         Self {
             name,
@@ -29,7 +29,7 @@ impl PrinterInfo {
     }
 }
 
-/// 打印机支持或自定义兜底的纸张尺寸。
+/// Paper dimensions supported by printer or custom fallback.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PaperInfo {
     pub id: String,
@@ -38,21 +38,21 @@ pub struct PaperInfo {
     pub height_mm: f64,
 }
 
-/// 打印机纸盒或进纸来源选项。
+/// Printer input tray or paper source option.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrinterTrayInfo {
     pub id: String,
     pub name: String,
 }
 
-/// 打印机介质类型选项。
+/// Printer media type option.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrinterMediaTypeInfo {
     pub id: String,
     pub name: String,
 }
 
-/// 后端提交单个 PDF 打印任务所需的选项。
+/// Options required by backend to submit a single PDF print task.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrintOptions {
     pub printer_name: String,
@@ -60,13 +60,13 @@ pub struct PrintOptions {
     pub copies: u16,
 }
 
-/// 后端提交单个 raw 打印任务所需的选项。
+/// Options required by backend to submit a single raw print task.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawPrintOptions {
     pub printer_name: String,
 }
 
-/// 平台打印命令成功提交后的可追踪信息。
+/// Trackable information after successful submission of platform print command.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrintSubmission {
     pub submitted_at: String,
@@ -75,7 +75,7 @@ pub struct PrintSubmission {
     pub tracking_supported: bool,
 }
 
-/// 平台队列追踪的保守结果。
+/// Conservative outcome from platform queue tracking.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PrintTrackingOutcome {
     Completed { message: String },
@@ -83,7 +83,7 @@ pub enum PrintTrackingOutcome {
     Unknown { message: String },
 }
 
-/// 平台打印后端返回的错误。
+/// Errors returned by platform printing backends.
 #[derive(Debug, Error)]
 pub enum PrintError {
     #[error("printer not found: {0}")]
@@ -96,28 +96,28 @@ pub enum PrintError {
     UnsupportedPlatform,
 }
 
-/// 平台打印后端统一返回结果。
+/// Unified result type returned by platform printing backends.
 pub type PrintResult<T> = Result<T, PrintError>;
 
-/// 队列 worker 和功能入口使用的平台打印抽象。
+/// Platform printing abstraction used by queue worker and functional entry points.
 pub trait PrintBackend {
-    /// 列出已安装打印机。
+    /// List installed printers.
     fn list_printers(&self) -> PrintResult<Vec<PrinterInfo>>;
-    /// 列出指定打印机的纸张。
+    /// List paper sizes for specified printer.
     fn list_papers(&self, printer_name: &str) -> PrintResult<Vec<PaperInfo>>;
-    /// 列出指定打印机可用纸盒；平台不支持枚举时返回空列表。
+    /// List available paper trays for specified printer; returns empty list if platform does not support enumeration.
     fn list_trays(&self, _printer_name: &str) -> PrintResult<Vec<PrinterTrayInfo>> {
         Ok(Vec::new())
     }
-    /// 列出指定打印机可用介质类型；平台不支持枚举时返回空列表。
+    /// List available media types for specified printer; returns empty list if platform does not support enumeration.
     fn list_media_types(&self, _printer_name: &str) -> PrintResult<Vec<PrinterMediaTypeInfo>> {
         Ok(Vec::new())
     }
-    /// 把 PDF 文件发送到平台打印队列。
+    /// Send PDF file to platform print queue.
     fn print_pdf(&self, path: &Path, options: &PrintOptions) -> PrintResult<PrintSubmission>;
-    /// 把原始打印指令字节发送到平台打印队列。
+    /// Send raw printer command bytes to platform print queue.
     fn print_raw(&self, data: &[u8], options: &RawPrintOptions) -> PrintResult<PrintSubmission>;
-    /// 查询平台队列对本次提交的保守状态。
+    /// Query conservative status from platform queue for this submission.
     fn track_submission(
         &self,
         _submission: &PrintSubmission,
@@ -127,7 +127,7 @@ pub trait PrintBackend {
             message: "platform does not provide trackable print status".to_string(),
         }
     }
-    /// 查询平台队列对 raw 提交的保守状态。
+    /// Query conservative status from platform queue for raw submission.
     fn track_raw_submission(
         &self,
         _submission: &PrintSubmission,

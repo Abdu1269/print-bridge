@@ -1,5 +1,11 @@
 # 打印协议与 API
 
+<div align="right">
+
+[English](./protocol_en.md)
+
+</div>
+
 PrintBridge 暴露一个 WebSocket 端点用于浏览器发起的实时打印。配置、日志、打印机发现和诊断通过 Tauri 命令（桌面）或 CLI/本地 IPC（headless）处理——没有 HTTP REST API。
 
 WebSocket 协议由 Axum 服务器在 `0.0.0.0:{port}`（默认 `17890`）上提供。路由仅暴露 `/ws`；没有其他 HTTP 路由可用。

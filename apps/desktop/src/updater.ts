@@ -27,12 +27,12 @@ export interface DownloadUpdateResult {
   contentLength: number | null;
 }
 
-/** 检查配置的 Tauri 更新端点是否有可用更新。 */
+/** Check configured Tauri update endpoint for available updates. */
 export async function checkForAppUpdate(): Promise<Update | null> {
   return check();
 }
 
-/** 把 Tauri 更新对象映射成 UI 需要的精简结构。 */
+/** Map Tauri update object to streamlined structure needed by UI. */
 export function toUpdateInfo(update: Update): UpdateInfo {
   return {
     version: update.version,
@@ -42,7 +42,7 @@ export function toUpdateInfo(update: Update): UpdateInfo {
   };
 }
 
-/** 下载并安装更新，同时向 UI 回报字节进度。 */
+/** Download and install update while reporting byte progress to UI. */
 export async function downloadAndInstallAppUpdate(
   update: Update,
   onProgress: (progress: UpdateProgress) => void,
@@ -67,7 +67,7 @@ export async function downloadAndInstallAppUpdate(
   return { downloadedBytes, contentLength };
 }
 
-/** 更新安装完成后重启桌面应用。 */
+/** Relaunch desktop application after update installation completes. */
 export function relaunchApp(): Promise<void> {
   return relaunch();
 }

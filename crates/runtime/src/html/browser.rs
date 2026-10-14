@@ -44,7 +44,7 @@ fn chrome_proxy_server(proxy_url: &Url) -> String {
     format!("{}://{host}:{port}", proxy_url.scheme())
 }
 
-/// 已发现浏览器的种类。
+/// Kind of discovered browser.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BrowserKind {
     Edge,
@@ -62,7 +62,7 @@ impl BrowserKind {
     }
 }
 
-/// 已发现的浏览器可执行文件。
+/// Discovered browser executable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserExecutable {
     pub kind: BrowserKind,
@@ -70,7 +70,7 @@ pub struct BrowserExecutable {
     pub label: &'static str,
 }
 
-/// 浏览器搜索的目标操作系统，方便测试候选顺序。
+/// Target operating system for browser search, facilitating candidate order testing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetOs {
     Windows,
@@ -95,7 +95,7 @@ impl TargetOs {
     }
 }
 
-/// 操作系统文件和 PATH 探测接口。
+/// OS file and PATH detection interface.
 pub trait BrowserProbe: Send + Sync {
     fn is_file(&self, path: &Path) -> bool;
     fn find_in_path(&self, command: &str) -> Option<PathBuf>;
@@ -143,7 +143,7 @@ impl BrowserProbe for SystemBrowserProbe {
     }
 }
 
-/// 按平台优先级查找已安装且可运行的 Chromium 系浏览器。
+/// Find installed, runnable Chromium-based browsers in platform priority order.
 pub struct BrowserLocator {
     os: TargetOs,
     probe: Arc<dyn BrowserProbe>,
@@ -162,7 +162,7 @@ impl BrowserLocator {
         Self { os, probe }
     }
 
-    /// 返回当前平台优先级最高且可用的浏览器。
+    /// Return highest-priority available browser for current platform.
     pub fn find(&self) -> Result<BrowserExecutable, HtmlRenderError> {
         Ok(self
             .available()
@@ -172,7 +172,7 @@ impl BrowserLocator {
             .expect("available browser candidates must not be empty"))
     }
 
-    /// 返回按平台优先级排序的全部可用浏览器。
+    /// Return all available browsers sorted by platform priority.
     fn available(&self) -> Result<Vec<BrowserExecutable>, Vec<String>> {
         let candidates = self.candidates();
         let searched = candidates
@@ -182,7 +182,7 @@ impl BrowserLocator {
         let mut available_candidates = Vec::new();
         for (kind, path) in candidates {
             let is_available = match self.os {
-                // Windows 不运行 `--version`，避免激活用户已有的浏览器窗口。
+                // Windows does not run `--version` to avoid activating existing user browser windows.
                 TargetOs::Windows => self.probe.is_file(&path),
                 TargetOs::MacOs => self.probe.is_file(&path) && self.probe.has_version(&path),
                 TargetOs::Linux => self.probe.has_version(&path),
@@ -301,7 +301,7 @@ pub struct BrowserDriverRequest {
     rejected_resources: RejectedResourceTracker,
 }
 
-/// 浏览器 worker 与外层 deadline 协作所需的状态。
+/// State required for browser worker collaboration with outer deadline.
 #[derive(Clone)]
 pub struct BrowserRenderControl {
     deadline: Instant,
@@ -347,7 +347,7 @@ impl BrowserRenderControl {
         Ok(remaining)
     }
 
-    /// 只在有足够时间完成接下来全部 CDP 请求时允许开始该同步调用。
+    /// Allow starting synchronous call only if sufficient time remains to complete all subsequent CDP requests.
     fn before_cdp_operations(&self, request_count: u32) -> Result<Duration, HtmlRenderError> {
         let required = self
             .cdp_operation_timeout
@@ -386,7 +386,7 @@ impl BrowserRenderControl {
     }
 }
 
-/// 同步浏览器调用边界，供渲染器放进 blocking 线程并在测试中替换。
+/// Synchronous browser invocation boundary, dispatched to blocking thread and mockable in tests.
 pub trait BrowserDriver: Send + Sync {
     fn render(
         &self,
@@ -409,7 +409,7 @@ enum BrowserLaunchAttemptError {
 struct BrowserLaunchGuard;
 
 impl BrowserLaunchGuard {
-    /// 在 deadline 前获取全局浏览器启动权，防止累积后台进程。
+    /// Acquire global browser launch lock before deadline, preventing accumulation of background processes.
     fn acquire(deadline: Instant, timeout_ms: u64) -> Result<Self, BrowserLaunchAttemptError> {
         let (mutex, condvar) = &BROWSER_LAUNCH_GATE;
         let mut in_progress = mutex.lock().unwrap_or_else(|error| error.into_inner());
@@ -440,7 +440,7 @@ impl Drop for BrowserLaunchGuard {
     }
 }
 
-/// 在独立线程中启动浏览器，并限制调用方等待启动结果的时间。
+/// Launch browser in detached thread, bounding caller wait time for launch results.
 fn launch_with_timeout<T: Send + 'static>(
     timeout: Duration,
     timeout_ms: u64,
@@ -473,7 +473,7 @@ fn launch_with_timeout<T: Send + 'static>(
     }
 }
 
-/// 依次启动已发现的浏览器，直到一个浏览器可用于 headless 渲染。
+/// Launch discovered browsers sequentially until one succeeds for headless rendering.
 fn launch_first_available<T>(
     candidates: Vec<BrowserExecutable>,
     mut launch: impl FnMut(BrowserExecutable) -> Result<T, BrowserLaunchAttemptError>,
@@ -494,7 +494,7 @@ fn launch_first_available<T>(
     Err(HtmlRenderError::RendererUnavailable { searched: failures })
 }
 
-/// 按优先级启动浏览器，并在每次尝试前获取剩余启动超时。
+/// Launch browsers by priority, acquiring remaining launch timeout prior to each attempt.
 fn launch_headless_browser(
     locator: &BrowserLocator,
     profile: Arc<tempfile::TempDir>,
@@ -526,7 +526,7 @@ fn launch_headless_browser(
     })
 }
 
-/// 检查是否有已安装的浏览器可以以 headless 模式启动。
+/// Check whether any installed browser can successfully launch in headless mode.
 pub fn check_browser_launch() -> Result<BrowserExecutable, HtmlRenderError> {
     let profile = Arc::new(tempfile::tempdir()?);
     let deadline = Instant::now() + RENDER_TIMEOUT;
@@ -596,7 +596,7 @@ impl BrowserDriver for InstalledBrowserDriver {
     }
 }
 
-/// 通过已安装 Chromium 系浏览器输出 PDF 的 HTML 渲染器。
+/// HTML renderer outputting PDF via installed Chromium-based browser.
 pub struct BrowserHtmlRenderer {
     policy: ResourcePolicy,
     driver: Arc<dyn BrowserDriver>,

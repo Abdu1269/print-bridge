@@ -1,5 +1,11 @@
 # 架构总览
 
+<div align="right">
+
+[English](./overview_en.md)
+
+</div>
+
 PrintBridge 是一个 Cargo workspace，交付桌面 GUI 与 Linux headless 两种互斥产品。两个产品都使用 `print-bridge` 作为可执行文件名，但由不同软件包提供。
 
 ## Workspace

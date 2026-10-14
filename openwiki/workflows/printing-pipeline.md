@@ -1,5 +1,11 @@
 # 打印流水线
 
+<div align="right">
+
+[English](./printing-pipeline_en.md)
+
+</div>
+
 打印流水线是核心处理路径：从作业接受到下载、格式转换、平台特定打印和状态跟踪。所有作业——无论来自 WebSocket 还是远程轮询——都经过同一个串行 FIFO 队列。
 
 ## 串行队列架构

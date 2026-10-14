@@ -1,4 +1,4 @@
-//! PrintBridge 的领域模型、协议类型和框架无关规则。
+//! Domain models, protocol types, and framework-independent rules for PrintBridge.
 
 pub mod activity;
 pub mod config;

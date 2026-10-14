@@ -27,7 +27,7 @@ const MACRO_SECURITY_CONFIG: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 </oor:items>
 "#;
 
-/// 使用隔离配置调用 LibreOffice 把 Office 文件转换为 PDF。
+/// Convert Office file to PDF using LibreOffice in an isolated profile.
 pub(super) async fn convert(
     input_path: &Path,
     output_path: &Path,
@@ -62,7 +62,7 @@ pub(super) async fn convert(
     Ok(CONVERTER)
 }
 
-/// 查找当前平台可调用的 LibreOffice 可执行文件。
+/// Find runnable LibreOffice executable on current platform.
 pub(crate) fn find_libreoffice() -> Option<PathBuf> {
     #[cfg(target_os = "macos")]
     let standard = vec![PathBuf::from(MACOS_SOFFICE)];
@@ -74,7 +74,7 @@ pub(crate) fn find_libreoffice() -> Option<PathBuf> {
     find_libreoffice_in(&standard, std::env::var_os("PATH").as_deref())
 }
 
-/// 按标准路径、soffice、libreoffice 的顺序选择可执行文件。
+/// Select executable in order of standard paths, soffice, and libreoffice.
 fn find_libreoffice_in(standard: &[PathBuf], path_value: Option<&OsStr>) -> Option<PathBuf> {
     if let Some(path) = standard.iter().find(|path| is_executable(path)) {
         return Some(path.clone());
@@ -92,32 +92,32 @@ fn find_libreoffice_in(standard: &[PathBuf], path_value: Option<&OsStr>) -> Opti
     None
 }
 
-/// 返回当前平台在 PATH 中查找的 LibreOffice 可执行文件名。
+/// Return LibreOffice executable names searched in PATH on current platform.
 #[cfg(unix)]
 fn path_executable_names() -> [&'static str; 2] {
     ["soffice", "libreoffice"]
 }
 
-/// 返回 Windows 在 PATH 中查找的 LibreOffice 可执行文件名。
+/// Return LibreOffice executable names searched in PATH on Windows.
 #[cfg(target_os = "windows")]
 fn path_executable_names() -> [&'static str; 2] {
     ["soffice.exe", "libreoffice.exe"]
 }
 
-/// 判断候选路径是否是当前用户可执行的普通文件。
+/// Determine whether candidate path is a regular file executable by current user.
 #[cfg(unix)]
 fn is_executable(path: &Path) -> bool {
     fs::metadata(path)
         .is_ok_and(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
 }
 
-/// 判断 Windows 候选路径是否是普通文件。
+/// Determine whether Windows candidate path is a regular file.
 #[cfg(target_os = "windows")]
 fn is_executable(path: &Path) -> bool {
     path.is_file()
 }
 
-/// 返回 Windows 标准目录和 App Paths 中的 LibreOffice 候选。
+/// Return LibreOffice candidates in Windows standard directories and App Paths.
 #[cfg(target_os = "windows")]
 fn windows_libreoffice_candidates() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
@@ -141,7 +141,7 @@ fn windows_libreoffice_candidates() -> Vec<PathBuf> {
     candidates
 }
 
-/// 从 Windows App Paths 被动读取 LibreOffice 可执行文件。
+/// Passively read LibreOffice executable from Windows App Paths.
 #[cfg(target_os = "windows")]
 fn query_windows_app_path(root: &str, view: &str) -> Option<PathBuf> {
     let mut command = StdCommand::new("reg.exe");
@@ -158,7 +158,7 @@ fn query_windows_app_path(root: &str, view: &str) -> Option<PathBuf> {
     parse_windows_app_path(&String::from_utf8_lossy(&output.stdout))
 }
 
-/// 解析 `reg query` 返回的 App Paths 默认值。
+/// Parse the default App Paths value returned by `reg query`.
 #[cfg(target_os = "windows")]
 fn parse_windows_app_path(output: &str) -> Option<PathBuf> {
     output.lines().find_map(|line| {
@@ -170,7 +170,7 @@ fn parse_windows_app_path(output: &str) -> Option<PathBuf> {
     })
 }
 
-/// 写入不信任任何文档路径的最高宏安全配置。
+/// Write maximum macro security configuration untrusting any document paths.
 async fn write_macro_security_profile(profile_dir: &Path) -> Result<(), OfficeConvertError> {
     let user_dir = profile_dir.join("user");
     tokio::fs::create_dir_all(&user_dir).await?;
@@ -182,7 +182,7 @@ async fn write_macro_security_profile(profile_dir: &Path) -> Result<(), OfficeCo
     Ok(())
 }
 
-/// 构造使用隔离用户配置的 LibreOffice headless 命令。
+/// Construct LibreOffice headless command using isolated user profile.
 fn build_command(
     executable: &Path,
     profile_url: &str,

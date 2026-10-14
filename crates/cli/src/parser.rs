@@ -236,7 +236,7 @@ pub struct CliOutput {
     pub exit_code: i32,
 }
 
-/// 在初始化运行时之前处理 Clap 的帮助和版本输出。
+/// Handle Clap help and version output prior to runtime initialization.
 pub fn cli_display_output_from<I, T>(args: I) -> Option<CliOutput>
 where
     I: IntoIterator<Item = T>,
@@ -259,7 +259,7 @@ where
     }
 }
 
-/// 解析并通过共享 CommandService 执行功能 CLI。
+/// Parse and execute functional CLI via shared CommandService.
 pub async fn run_cli_from<I, T>(
     args: I,
     service: Arc<CommandService>,

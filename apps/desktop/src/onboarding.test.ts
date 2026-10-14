@@ -62,7 +62,7 @@ async function flushAsyncWork(): Promise<void> {
   await nextTick();
 }
 
-describe('首次使用引导', () => {
+describe('First-run onboarding tour', () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.body.innerHTML = [
@@ -78,7 +78,7 @@ describe('首次使用引导', () => {
     mocks.driver.moveTo.mockReset();
   });
 
-  it('只在配置就绪且窗口可见并聚焦后自动启动', async () => {
+  it('only auto-starts after config is ready and window is visible and focused', async () => {
     const wrapper = mount(Host, { props: { ready: false } });
     await flushAsyncWork();
     expect(mocks.driver.drive).not.toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe('首次使用引导', () => {
     expect(mocks.driver.drive).toHaveBeenCalledWith(0);
   });
 
-  it('完成标记会阻止自动启动，但允许手动重播', async () => {
+  it('completion marker prevents auto-start but allows manual replay', async () => {
     markOnboardingCompleted();
     expect(isOnboardingCompleted()).toBe(true);
     expect(window.localStorage.getItem(ONBOARDING_COMPLETED_STORAGE_KEY)).toBe('true');
@@ -109,7 +109,7 @@ describe('首次使用引导', () => {
     expect(mocks.driver.drive).toHaveBeenCalledWith(0);
   });
 
-  it('下一步会先切换对应 Tab，再移动 Driver.js', async () => {
+  it('next step switches corresponding tab before moving Driver.js', async () => {
     mocks.isFocused.mockResolvedValue(true);
     mocks.isVisible.mockResolvedValue(true);
     const wrapper = mount(Host, { props: { ready: true } });
@@ -129,7 +129,7 @@ describe('首次使用引导', () => {
     expect(mocks.driver.moveTo).toHaveBeenCalledWith(5);
   });
 
-  it('跳过会写入完成标记并销毁引导', async () => {
+  it('skip writes completion marker and destroys onboarding tour', async () => {
     mocks.isFocused.mockResolvedValue(true);
     mocks.isVisible.mockResolvedValue(true);
     mount(Host, { props: { ready: true } });
@@ -146,7 +146,7 @@ describe('首次使用引导', () => {
     expect(mocks.driver.destroy).toHaveBeenCalledOnce();
   });
 
-  it('完成后会恢复开始引导前所在的 Tab', async () => {
+  it('restores previous active tab upon completion', async () => {
     const wrapper = mount(Host, { props: { ready: false } });
     const exposed = wrapper.vm as unknown as {
       activeTab: string;

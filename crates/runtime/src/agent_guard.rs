@@ -18,7 +18,7 @@ pub enum AgentPortStatus {
     OccupiedByOther { addr: SocketAddr },
 }
 
-/// 检查当前配置端口上是否已有 PrintBridge Agent。
+/// Check whether a PrintBridge Agent is already running on the configured port.
 pub fn check_agent_port(config: &AgentConfig) -> AgentPortStatus {
     let addr = probe_addr(config);
     match TcpStream::connect_timeout(&addr, PROBE_TIMEOUT) {
@@ -27,7 +27,7 @@ pub fn check_agent_port(config: &AgentConfig) -> AgentPortStatus {
     }
 }
 
-/// 返回发现已有 Agent 时展示给 CLI 或 GUI 的消息。
+/// Return message displayed to CLI or GUI when an existing Agent is detected.
 pub fn already_running_message(agent: &RunningAgent) -> String {
     format!("PrintBridge Agent is already running at {}", agent.addr)
 }

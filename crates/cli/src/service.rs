@@ -4,22 +4,22 @@ use async_trait::async_trait;
 
 use crate::{Command, CommandError, CommandErrorKind, CommandPolicy, CommandResult};
 
-/// 执行命令的在线或离线端口。
-// async-trait 0.1.89 为 Future 返回值生成 #[must_use]，触发 Rust 1.99 的重复属性检查。
+/// Online or offline port for executing commands.
+// async-trait 0.1.89 generates #[must_use] for Future return values, triggering duplicate attribute checks on Rust 1.99.
 #[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait CommandExecutor: Send + Sync {
     async fn execute(&self, command: Command) -> Result<CommandResult, CommandError>;
 }
 
-/// 根据命令策略选择在线 Agent 或离线实现。
+/// Select online Agent or offline implementation according to command policy.
 pub struct CommandService {
     online: Option<Arc<dyn CommandExecutor>>,
     offline: Arc<dyn CommandExecutor>,
 }
 
 impl CommandService {
-    /// 创建共享命令服务。
+    /// Create shared command service.
     pub fn new(
         online: Option<Arc<dyn CommandExecutor>>,
         offline: Arc<dyn CommandExecutor>,
@@ -27,7 +27,7 @@ impl CommandService {
         Self { online, offline }
     }
 
-    /// 按命令策略执行，并仅对明确的未运行错误执行离线回退。
+    /// Execute according to command policy, falling back offline only for explicit NotRunning errors.
     pub async fn execute(&self, command: Command) -> Result<CommandResult, CommandError> {
         match command.policy() {
             CommandPolicy::OfflineAllowed => self.offline.execute(command).await,

@@ -187,67 +187,67 @@ const { replayOnboarding } = useOnboarding({
   t: (key) => t(key),
 });
 
-/** UI 请求当前使用的本地服务端口。 */
+/** Local service port currently requested by the UI. */
 const servicePort = computed(() => activePort.value ?? config.value?.service.port ?? 0);
-/** 保存的配置端口是否还未在当前服务中生效。 */
+/** Whether saved configured port has not yet taken effect in current running service. */
 const hasPendingPortChange = computed(
   () =>
     activePort.value !== null &&
     config.value !== null &&
     config.value.service.port !== activePort.value,
 );
-/** 顶部状态栏显示的可读状态。 */
+/** Human-readable status displayed in top status bar. */
 const statusLabel = computed(() => {
   if (loadingConfig.value) return t('loading');
   if (errorMessage.value || doctorNeedsAttention.value) return t('needsAttention');
   return t('ready');
 });
-/** 根据当前错误状态计算状态徽标样式。 */
+/** Compute status badge style based on current error condition. */
 const statusVariant = computed(() => {
   if (loadingConfig.value) return 'secondary';
   if (errorMessage.value || doctorNeedsAttention.value) return 'destructive';
   return 'success';
 });
-/** 仅在需要显式提交的设置页显示保存按钮。 */
+/** Only display Save button on settings pages that require explicit submission. */
 const showsSaveButton = computed(
   () => activeTab.value === 'settings' || activeTab.value === 'remote',
 );
-/** 更新器当前是否正在检查新版本。 */
+/** Whether the updater is currently checking for a new version. */
 const checkingUpdate = computed(() => updateStatus.value === 'checking');
-/** 当前是否正在下载或安装更新。 */
+/** Whether an update is currently being downloaded or installed. */
 const installingUpdate = computed(() => updateStatus.value === 'downloading');
-/** 更新安装下载进度百分比。 */
+/** Update download and installation progress percentage. */
 const updateProgressPercent = computed(() => {
   const contentLength = updateProgress.value.contentLength;
   if (!contentLength) return 0;
 
   return Math.min(100, Math.round((updateProgress.value.downloadedBytes / contentLength) * 100));
 });
-/** 更新安装时显示的下载进度文本。 */
+/** Download progress text displayed during update installation. */
 const updateProgressText = computed(() => {
   const { downloadedBytes, contentLength } = updateProgress.value;
   if (!contentLength) return formatBytes(downloadedBytes);
 
   return `${formatBytes(downloadedBytes)} / ${formatBytes(contentLength)}`;
 });
-/** 更新面板中显示的当前版本。 */
+/** Current version displayed in the update panel. */
 const currentAppVersion = computed(() => updateInfo.value?.currentVersion ?? appVersion.value);
-/** 更新面板中显示的可用版本。 */
+/** Available version displayed in the update panel. */
 const availableUpdateVersion = computed(() => updateInfo.value?.version ?? '-');
-/** 根据当前更新状态生成主按钮文案。 */
+/** Generate primary button label based on current update status. */
 const updateButtonLabel = computed(() => {
   if (installingUpdate.value) return t('updating');
   if (updateInfo.value?.version) return `${t('updateToVersion')} v${updateInfo.value.version}`;
 
   return t('downloadAndInstall');
 });
-/** 当前配置是否足够提交测试打印。 */
+/** Whether current configuration is sufficient to submit a test print. */
 const canTestPrint = computed(
   () =>
     Boolean(config.value?.printing.default_printer) &&
     Boolean(config.value?.printing.default_paper),
 );
-/** 默认打印机选择项的双向计算值。 */
+/** Two-way computed value for default printer selection. */
 const selectedPrinter = computed({
   get: () => config.value?.printing.default_printer ?? '',
   set: (value: string) => {
@@ -256,7 +256,7 @@ const selectedPrinter = computed({
   },
 });
 
-/** 纸张预设或自定义纸张选择项的双向计算值。 */
+/** Two-way computed value for paper preset or custom paper selection. */
 const selectedPaper = computed({
   get: () => {
     const currentPaper = config.value?.printing.default_paper;
@@ -274,17 +274,17 @@ const selectedPaper = computed({
     };
   },
 });
-/** 当前选中的任务摘要。 */
+/** Summary of currently selected task. */
 const selectedTask = computed(
   () => taskHistory.value.find((item) => item.job_id === selectedTaskJobId.value) ?? null,
 );
 
-/** 当前设置的 UI 语言。 */
+/** Currently configured UI language. */
 const currentLanguage = computed(() => config.value?.app.language ?? DEFAULT_APP_CONFIG.language);
 
 watch(currentLanguage, (language) => setI18nLocale(language), { immediate: true });
 
-/** 确保加载后的配置始终有可用的默认纸张对象。 */
+/** Ensure loaded configuration always has a valid default paper object. */
 function normalizeConfig(value: AgentConfig): AgentConfig {
   return {
     ...value,
@@ -323,12 +323,12 @@ function defaultExportOptions(): ExportConfigOptions {
   };
 }
 
-/** 判断已存储的字符串是否是支持的主题模式。 */
+/** Determine whether stored string is a supported theme mode. */
 function isThemeMode(value: string | null): value is ThemeMode {
   return value === 'system' || value === 'light' || value === 'dark';
 }
 
-/** 从本地存储读取已保存的主题模式。 */
+/** Read saved theme mode from local storage. */
 function readThemeMode(): ThemeMode {
   if (typeof window === 'undefined') return 'system';
 
@@ -336,7 +336,7 @@ function readThemeMode(): ThemeMode {
   return isThemeMode(storedMode) ? storedMode : 'system';
 }
 
-/** 把选择的主题或系统推导出的主题应用到页面。 */
+/** Apply selected or system-derived theme mode to page document. */
 function applyTheme(mode: ThemeMode): void {
   if (typeof window === 'undefined') return;
 
@@ -347,7 +347,7 @@ function applyTheme(mode: ThemeMode): void {
   document.documentElement.style.colorScheme = shouldUseDark ? 'dark' : 'light';
 }
 
-/** 保存选择的主题模式，并立即应用。 */
+/** Save selected theme mode and apply immediately. */
 function setThemeMode(value: string): void {
   const nextMode = isThemeMode(value) ? value : 'system';
 
@@ -356,13 +356,13 @@ function setThemeMode(value: string): void {
   applyTheme(nextMode);
 }
 
-/** 更新 UI 语言，随保存配置持久化。 */
+/** Update UI language and persist with saved configuration. */
 function setLanguage(value: string): void {
   if (!config.value) return;
   config.value.app.language = isUiLanguage(value) ? value : DEFAULT_APP_CONFIG.language;
 }
 
-/** 生成单个主题选项按钮的样式类。 */
+/** Generate CSS class for individual theme option button. */
 function segmentedOptionClass(isActive: boolean): string {
   return [
     'inline-flex h-8 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-colors',
@@ -381,14 +381,14 @@ function languageOptionClass(language: UiLanguage): string {
   return segmentedOptionClass(currentLanguage.value === language);
 }
 
-/** 系统配色变化时重新应用系统主题。 */
+/** Re-apply system theme when system color scheme changes. */
 function handleSystemThemeChange(): void {
   if (themeMode.value === 'system') {
     applyTheme('system');
   }
 }
 
-/** 注册系统主题模式需要的系统配色监听器。 */
+/** Register system color scheme listener for system theme mode. */
 function setupThemeSync(): void {
   if (typeof window === 'undefined') return;
 
@@ -396,7 +396,7 @@ function setupThemeSync(): void {
   colorSchemeQuery.addEventListener('change', handleSystemThemeChange);
 }
 
-/** 返回可编辑的纸张配置，必要时创建默认纸张。 */
+/** Return editable paper config, creating default paper when necessary. */
 function currentPaper(): EffectivePaper {
   if (!config.value) return DEFAULT_PAPER;
   if (!config.value.printing.default_paper) {
@@ -406,7 +406,7 @@ function currentPaper(): EffectivePaper {
   return config.value.printing.default_paper;
 }
 
-/** 查找与给定纸张尺寸相同的打印机纸张预设。 */
+/** Find printer paper preset matching specified paper dimensions. */
 function matchingPaper(paper: EffectivePaper): PaperInfo | undefined {
   return papers.value.find(
     (item) =>
@@ -415,7 +415,7 @@ function matchingPaper(paper: EffectivePaper): PaperInfo | undefined {
   );
 }
 
-/** 输入值有效时更新配置中的服务端口。 */
+/** Update service port in configuration when input value is valid. */
 function setPort(value: string | number): void {
   if (!config.value) return;
   const port = Number(value);
@@ -424,7 +424,7 @@ function setPort(value: string | number): void {
   }
 }
 
-/** 输入值有效时更新一个自定义纸张尺寸。 */
+/** Update custom paper dimension when input value is valid. */
 function setPaperDimension(key: keyof EffectivePaper, value: string | number): void {
   const dimension = Number(value);
   if (Number.isFinite(dimension) && dimension > 0) {
@@ -432,7 +432,7 @@ function setPaperDimension(key: keyof EffectivePaper, value: string | number): v
   }
 }
 
-/** 更新远程任务配置中的可空字符串。 */
+/** Update nullable string field in remote task configuration. */
 function setRemoteString(
   key: 'endpoint_url' | 'bearer_token' | 'device_id' | 'device_name',
   value: string | number,
@@ -442,7 +442,7 @@ function setRemoteString(
   config.value.remote[key] = nextValue || null;
 }
 
-/** 更新远程任务配置中的正整数。 */
+/** Update positive integer field in remote task configuration. */
 function setRemoteNumber(
   key: 'poll_interval_seconds' | 'max_report_retries',
   value: string | number,
@@ -458,7 +458,7 @@ function setRemoteNumber(
   }
 }
 
-/** 关闭顶部提示消息。 */
+/** Dismiss top alert banner message. */
 function dismissMessage(kind: 'error' | 'success'): void {
   if (kind === 'error') {
     errorMessage.value = '';
@@ -571,13 +571,13 @@ async function handleImportConfig(): Promise<void> {
   }
 }
 
-/** 为当前设备生成随机 UUID v4。 */
+/** Generate random UUID v4 for current device. */
 function generateRemoteDeviceId(): void {
   if (!config.value) return;
   config.value.remote.device_id = crypto.randomUUID();
 }
 
-/** 加载配置、打印机、纸张和任务历史，初始化页面状态。 */
+/** Load configuration, printers, papers, and task history to initialize page state. */
 async function loadConfig(): Promise<void> {
   loadingConfig.value = true;
   errorMessage.value = '';
@@ -593,7 +593,7 @@ async function loadConfig(): Promise<void> {
   }
 }
 
-/** 从 Tauri 读取当前桌面应用版本。 */
+/** Read current desktop application version from Tauri. */
 async function loadAppVersion(): Promise<void> {
   try {
     appVersion.value = await getVersion();
@@ -602,7 +602,7 @@ async function loadAppVersion(): Promise<void> {
   }
 }
 
-/** 刷新打印机列表，并在未配置时选择合适的默认打印机。 */
+/** Refresh printer list and select appropriate default printer if not configured. */
 async function refreshPrinters(): Promise<void> {
   if (!config.value) return;
   loadingPrinters.value = true;
@@ -626,7 +626,7 @@ async function refreshPrinters(): Promise<void> {
   }
 }
 
-/** 刷新当前选中打印机的纸张选项。 */
+/** Refresh paper options for currently selected printer. */
 async function refreshPapers(): Promise<void> {
   if (!config.value?.printing.default_printer) {
     papers.value = [];
@@ -646,13 +646,13 @@ async function refreshPapers(): Promise<void> {
   }
 }
 
-/** 应用打印机选择，并重新加载对应纸张列表。 */
+/** Apply printer selection and reload corresponding paper list. */
 async function handlePrinterChange(value: string): Promise<void> {
   selectedPrinter.value = value;
   await refreshPapers();
 }
 
-/** 通过 Tauri 保存当前设置；端口变化时重启应用让新监听端口生效。 */
+/** Save current settings via Tauri; restart application if port changed to apply new listen port. */
 async function persistConfig(): Promise<void> {
   if (!config.value) return;
   saving.value = true;
@@ -683,7 +683,7 @@ async function persistConfig(): Promise<void> {
   }
 }
 
-/** 手动测试远程任务 URL 的 GET/POST 连通性。 */
+/** Manually test GET/POST connectivity for remote task URL. */
 async function handleTestRemoteConnection(): Promise<void> {
   if (!config.value || !config.value.remote.enabled) return;
   testingRemote.value = true;
@@ -700,7 +700,7 @@ async function handleTestRemoteConnection(): Promise<void> {
   }
 }
 
-/** 使用当前 Agent 默认打印设置提交测试校准页。 */
+/** Submit calibration test page using current Agent default print settings. */
 async function handleTestPrint(): Promise<void> {
   if (!config.value || !canTestPrint.value) return;
   testingPrint.value = true;
@@ -717,7 +717,7 @@ async function handleTestPrint(): Promise<void> {
   }
 }
 
-/** 从本地 Agent 刷新任务历史。 */
+/** Refresh task history from local Agent. */
 async function refreshTaskHistory(): Promise<void> {
   confirmingClearTaskHistory.value = false;
   const requestId = ++taskHistoryRequestId;
@@ -748,7 +748,7 @@ async function refreshTaskHistory(): Promise<void> {
   }
 }
 
-/** 读取单个任务的状态事件。 */
+/** Read status events for an individual task. */
 async function selectTask(jobId: string): Promise<void> {
   const requestId = ++taskEventsRequestId;
   selectedTaskJobId.value = jobId;
@@ -771,7 +771,7 @@ async function selectTask(jobId: string): Promise<void> {
   }
 }
 
-/** 清空本地任务历史。 */
+/** Clear local task history. */
 async function handleClearTaskHistory(): Promise<void> {
   if (!confirmingClearTaskHistory.value) {
     confirmingClearTaskHistory.value = true;
@@ -801,7 +801,7 @@ async function handleClearTaskHistory(): Promise<void> {
   }
 }
 
-/** 保存白名单，且不提交设置和远程面板中尚未确认的改动。 */
+/** Save allowlist without committing unconfirmed changes in settings and remote panels. */
 async function persistWhitelistChanges(
   previousSecurity: AgentConfig['security'],
 ): Promise<boolean> {
@@ -828,7 +828,7 @@ async function persistWhitelistChanges(
   }
 }
 
-/** 把校验通过的浏览器 Origin 加入允许列表并立即保存。 */
+/** Add validated browser Origin to allowlist and save immediately. */
 async function addOrigin(): Promise<void> {
   if (!config.value) return;
   const origin = originDraft.value.trim();
@@ -850,7 +850,7 @@ async function addOrigin(): Promise<void> {
   if (!(await persistWhitelistChanges(previousSecurity))) originDraft.value = origin;
 }
 
-/** 校验 Origin 字符串必须只包含协议和主机。 */
+/** Validate that Origin string contains only scheme and host. */
 function isValidOrigin(value: string): boolean {
   try {
     const url = new URL(value);
@@ -862,7 +862,7 @@ function isValidOrigin(value: string): boolean {
   }
 }
 
-/** 从允许列表移除一个浏览器 Origin 并立即保存。 */
+/** Remove a browser Origin from allowlist and save immediately. */
 async function removeOrigin(origin: string): Promise<void> {
   if (!config.value) return;
   const previousSecurity = {
@@ -875,7 +875,7 @@ async function removeOrigin(origin: string): Promise<void> {
   await persistWhitelistChanges(previousSecurity);
 }
 
-/** 规范化 IP 白名单，确保默认回环地址始终存在。 */
+/** Normalize IP allowlist ensuring default loopback address is always present. */
 function normalizeAllowedIps(entries: string[]): string[] {
   const normalized = [REQUIRED_LOOPBACK_IP];
   for (const rawEntry of entries) {
@@ -887,17 +887,17 @@ function normalizeAllowedIps(entries: string[]): string[] {
   return normalized;
 }
 
-/** 判断 IP 白名单项是否为不可删除的默认项。 */
+/** Determine whether IP allowlist entry is the non-deletable default entry. */
 function isFixedAllowedIp(entry: string): boolean {
   return entry === REQUIRED_LOOPBACK_IP;
 }
 
-/** 判断输入是否为禁止的任意地址项。 */
+/** Determine whether input is a prohibited wildcard/any-address entry. */
 function isAnyAddressEntry(entry: string): boolean {
   return ['0.0.0.0', '::', '0.0.0.0/0', '::/0'].includes(entry);
 }
 
-/** 前端轻量校验 IP 或 CIDR，最终以后端校验为准。 */
+/** Lightweight frontend check for IP or CIDR; backend performs authoritative validation. */
 function isValidAllowedIpEntry(value: string): boolean {
   const entry = value.trim();
   if (!entry || isAnyAddressEntry(entry)) return false;
@@ -917,7 +917,7 @@ function isValidAllowedIpEntry(value: string): boolean {
   return isValidIpAddress(entry);
 }
 
-/** 前端基础 IP 格式检查，避免明显错误；后端负责完整 IPv6/CIDR 解析。 */
+/** Frontend basic IP format check to prevent obvious typos; backend handles complete IPv6/CIDR parsing. */
 function isValidIpAddress(value: string): boolean {
   if (value.includes(':')) {
     return /^[0-9a-fA-F:]+$/.test(value) && value.includes(':');
@@ -934,7 +934,7 @@ function isValidIpAddress(value: string): boolean {
   );
 }
 
-/** 把校验通过的 IP 或 CIDR 加入允许列表并立即保存。 */
+/** Add validated IP or CIDR to allowlist and save immediately. */
 async function addAllowedIp(): Promise<void> {
   if (!config.value) return;
   const entry = ipDraft.value.trim();
@@ -957,7 +957,7 @@ async function addAllowedIp(): Promise<void> {
   if (!(await persistWhitelistChanges(previousSecurity))) ipDraft.value = entry;
 }
 
-/** 从 IP 白名单移除一个用户添加项并立即保存。 */
+/** Remove a user-added entry from IP allowlist and save immediately. */
 async function removeAllowedIp(entry: string): Promise<void> {
   if (!config.value) return;
   if (isFixedAllowedIp(entry)) {
@@ -975,7 +975,7 @@ async function removeAllowedIp(entry: string): Promise<void> {
   await persistWhitelistChanges(previousSecurity);
 }
 
-/** 格式化 RFC3339 时间用于展示。 */
+/** Format RFC3339 timestamp for UI display. */
 function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -983,7 +983,7 @@ function formatDateTime(value: string): string {
   return date.toLocaleString();
 }
 
-/** 返回任务状态标签。 */
+/** Return task status label. */
 function taskStatusLabel(status: TaskHistoryStatus): string {
   const labels: Record<UiLanguage, Record<TaskHistoryStatus, string>> = {
     'zh-CN': {
@@ -1011,7 +1011,7 @@ function taskStatusLabel(status: TaskHistoryStatus): string {
   return labels[currentLanguage.value][status];
 }
 
-/** 返回任务来源标签。 */
+/** Return task source label. */
 function taskSourceLabel(source: TaskHistorySource): string {
   const labels: Record<UiLanguage, Record<TaskHistorySource, string>> = {
     'zh-CN': {
@@ -1029,7 +1029,7 @@ function taskSourceLabel(source: TaskHistorySource): string {
   return labels[currentLanguage.value][source];
 }
 
-/** 格式化字节数用于更新下载进度展示。 */
+/** Format byte count for update download progress display. */
 function formatBytes(value: number): string {
   if (value < 1024) return `${value} B`;
   const kib = value / 1024;
@@ -1038,12 +1038,12 @@ function formatBytes(value: number): string {
   return `${(kib / 1024).toFixed(1)} MB`;
 }
 
-/** 格式化毫米尺寸，设置页用整数毫米展示。 */
+/** Format millimeter dimensions for display as integer millimeters in settings. */
 function formatMillimeters(value: number): string {
   return Math.round(value).toString();
 }
 
-/** 生成纸张下拉项文案，避免尺寸型名称重复显示。 */
+/** Generate paper dropdown option label avoiding duplicate dimension display. */
 function formatPaperLabel(paper: PaperInfo): string {
   const sizeLabel = `${formatMillimeters(paper.width_mm)} x ${formatMillimeters(paper.height_mm)} mm`;
   if (/^\d+(?:\.\d+)? x \d+(?:\.\d+)? mm$/.test(paper.name)) {
@@ -1053,7 +1053,7 @@ function formatPaperLabel(paper: PaperInfo): string {
   return `${paper.name} · ${sizeLabel}`;
 }
 
-/** 检查是否有可用的桌面应用更新。 */
+/** Check whether desktop application updates are available. */
 async function checkForUpdate(): Promise<void> {
   updateStatus.value = 'checking';
   updateMessage.value = '';
@@ -1082,7 +1082,7 @@ async function checkForUpdate(): Promise<void> {
   }
 }
 
-/** 下载并安装当前可用的更新。 */
+/** Download and install currently available update. */
 async function installAvailableUpdate(): Promise<void> {
   if (!availableUpdate.value) return;
 
@@ -1105,7 +1105,7 @@ async function installAvailableUpdate(): Promise<void> {
   }
 }
 
-/** 更新安装完成后重启应用。 */
+/** Restart application after update installation completes. */
 async function restartAfterUpdate(): Promise<void> {
   try {
     await relaunchApp();
@@ -1115,7 +1115,7 @@ async function restartAfterUpdate(): Promise<void> {
   }
 }
 
-/** 用默认浏览器打开项目仓库。 */
+/** Open project repository in default system browser. */
 async function openGitHubRepository(): Promise<void> {
   try {
     await openUrl(GITHUB_REPOSITORY_URL);
@@ -1125,7 +1125,7 @@ async function openGitHubRepository(): Promise<void> {
   }
 }
 
-/** 用默认浏览器打开 GitHub Releases 页面。 */
+/** Open GitHub Releases page in default system browser. */
 async function openReleaseNotes(): Promise<void> {
   try {
     await openUrl(GITHUB_RELEASES_URL);
@@ -1161,7 +1161,7 @@ async function changeCliIntegration(action: 'install' | 'uninstall'): Promise<vo
 applyTheme(themeMode.value);
 
 onMounted(() => {
-  // 首次加载页面时，先同步主题监听，再加载异步应用数据。
+  // Synchronize theme listeners first before loading asynchronous application data on initial mount.
   setupThemeSync();
   void loadConfig();
   void loadAppVersion();
@@ -1169,7 +1169,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  // 设置页面销毁时移除全局媒体查询监听器。
+  // Remove global media query listeners when settings page unmounts.
   colorSchemeQuery?.removeEventListener('change', handleSystemThemeChange);
 });
 </script>

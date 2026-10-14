@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashSet, VecDeque};
 use thiserror::Error;
 
-/// 已进入本地 FIFO 队列的打印任务。
+/// Print task that has entered the local FIFO queue.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QueuedJob {
     pub request_id: String,
@@ -15,7 +15,7 @@ pub struct QueuedJob {
     pub remote: bool,
 }
 
-/// 可映射回协议错误码的队列接收错误。
+/// Queue admission errors mappable to protocol error codes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 pub enum QueueError {
     #[error("duplicate job id")]
@@ -26,7 +26,7 @@ pub enum QueueError {
     InvalidMessage,
 }
 
-/// 内存队列状态，以及任务和批次的重复保护。
+/// In-memory queue state with deduplication protection for tasks and batches.
 #[derive(Debug, Default, Clone)]
 pub struct QueueState {
     pending: VecDeque<QueuedJob>,
@@ -35,7 +35,7 @@ pub struct QueueState {
 }
 
 impl QueueState {
-    /// 检查任务 ID 是否重复后接收单个任务。
+    /// Accept a single task after verifying task ID is not duplicated.
     pub fn accept_job(&mut self, request_id: String, job: PrintJobInput) -> Result<(), QueueError> {
         self.accept_queued_job(QueuedJob {
             request_id,
@@ -46,7 +46,7 @@ impl QueueState {
         })
     }
 
-    /// 接收远程服务拉取到的单个任务。
+    /// Accept a single task polled from remote service.
     pub fn accept_remote_job(
         &mut self,
         request_id: String,
@@ -72,7 +72,7 @@ impl QueueState {
         Ok(())
     }
 
-    /// 仅当批次和每个任务 ID 都唯一时接收整批任务。
+    /// Accept an entire batch only when batch ID and every task ID are unique.
     pub fn accept_batch(
         &mut self,
         request_id: String,
@@ -82,7 +82,7 @@ impl QueueState {
         self.accept_batch_with_remote(request_id, batch_id, jobs, false)
     }
 
-    /// 接收来自浏览器连接的任务，并保存已验证的本机 HTML Origin。
+    /// Accept task from browser connection, preserving verified local HTML Origin.
     pub fn accept_job_with_html_local_origin(
         &mut self,
         request_id: String,
@@ -99,7 +99,7 @@ impl QueueState {
         })
     }
 
-    /// 接收来自浏览器连接的批量任务，并保存已验证的本机 HTML Origin。
+    /// Accept batch from browser connection, preserving verified local HTML Origin.
     pub fn accept_batch_with_html_local_origin(
         &mut self,
         request_id: String,
@@ -110,7 +110,7 @@ impl QueueState {
         self.accept_batch_with_html_origin(request_id, batch_id, jobs, false, html_local_origin)
     }
 
-    /// 接收远程服务拉取到的整批任务。
+    /// Accept an entire batch polled from remote service.
     pub fn accept_remote_batch(
         &mut self,
         request_id: String,
@@ -169,18 +169,18 @@ impl QueueState {
         Ok(())
     }
 
-    /// 按 FIFO 顺序弹出下一个 worker 要处理的任务。
+    /// Pop the next task to be processed by worker in FIFO order.
     pub fn pop_next(&mut self) -> Option<QueuedJob> {
         self.pending.pop_front()
     }
 
-    /// 返回当前尚未被 worker 取走的内存队列快照。
+    /// Return a snapshot of the in-memory queue not yet taken by worker.
     pub fn pending_jobs(&self) -> Vec<QueuedJob> {
         self.pending.iter().cloned().collect()
     }
 }
 
-/// 只把已验证的本机 Origin 附加到与其完全同源的 HTML 作业。
+/// Attach verified local Origin only to HTML jobs that are strictly same-origin.
 fn html_local_origin_for_job(
     job: &PrintJobInput,
     html_local_origin: &Option<String>,

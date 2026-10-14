@@ -1,4 +1,4 @@
-// 防止 Windows release 版本额外弹出控制台窗口，请勿删除！！
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
@@ -21,7 +21,7 @@ fn is_cli_command(command: Option<&str>) -> bool {
     command.is_some()
 }
 
-/// 根据调用名和首个参数判断是否应进入 CLI。
+/// Determine whether to enter CLI mode based on program name and first argument.
 #[cfg(not(target_os = "windows"))]
 fn should_run_cli(program: Option<&str>, command: Option<&str>) -> bool {
     is_cli_command(command)
